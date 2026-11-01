@@ -59,7 +59,7 @@ insert into public.products(id,slug,name,category,description,price,unit,image_u
 ('crab-medium','crab-medium','Medium Crab','prawns','Fresh coastal crab',600,'kg','https://images.unsplash.com/photo-1559737558-2f5a35f4523b?auto=format&fit=crop&w=900&q=85'),
 ('chicken','chicken','Chicken','chicken','Fresh cuts for every meal',300,'kg','https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=85'),
 ('marinated-chicken','marinated-chicken','Marinated Chicken','chicken','Ready-to-cook flavour',450,'kg','https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=85'),
-('mutton','mutton','Mutton','mutton','Tender, carefully selected cuts',850,'kg','https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=85')
+('mutton','mutton','Mutton','mutton','Tender, carefully selected cuts',0,'kg','https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=85')
 on conflict(id) do nothing;
 
 -- Public checkout API: calculate prices and totals in PostgreSQL, not in the browser.
