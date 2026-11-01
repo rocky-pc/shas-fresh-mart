@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BadgeCheck, CheckCircle2, ChevronDown, Fish, Heart, Leaf, MapPin, Menu, Minus, Plus, Search, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Truck, X, LogIn, LogOut, ClipboardList, Phone, PackageCheck } from 'lucide-react';
 import { supabase, supabaseConfigured } from './lib/supabase';
 const PHONE='6380723356';
