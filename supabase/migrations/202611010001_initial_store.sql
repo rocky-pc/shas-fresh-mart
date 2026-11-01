@@ -61,3 +61,62 @@ insert into public.products(id,slug,name,category,description,price,unit,image_u
 ('marinated-chicken','marinated-chicken','Marinated Chicken','chicken','Ready-to-cook flavour',450,'kg','https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=85'),
 ('mutton','mutton','Mutton','mutton','Tender, carefully selected cuts',850,'kg','https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=85')
 on conflict(id) do nothing;
+
+-- Public checkout API: calculate prices and totals in PostgreSQL, not in the browser.
+create or replace function public.place_order(
+  p_customer_name text,
+  p_phone text,
+  p_address text,
+  p_area text,
+  p_notes text,
+  p_items jsonb
+) returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_order_id uuid;
+  v_item jsonb;
+  v_product_id text;
+  v_product_name text;
+  v_price numeric(10,2);
+  v_qty numeric(8,2);
+  v_total numeric(10,2) := 0;
+begin
+  if length(trim(coalesce(p_customer_name,''))) not between 2 and 120 then raise exception 'Please enter a valid customer name'; end if;
+  if length(regexp_replace(coalesce(p_phone,''),'[^0-9]','','g')) not between 8 and 15 then raise exception 'Please enter a valid phone number'; end if;
+  if length(trim(coalesce(p_address,''))) not between 5 and 500 then raise exception 'Please enter a valid delivery address'; end if;
+  if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) < 1 or jsonb_array_length(p_items) > 30 then raise exception 'Cart is empty or contains too many items'; end if;
+
+  for v_item in select value from jsonb_array_elements(p_items)
+  loop
+    v_product_id := v_item->>'product_id';
+    v_qty := (v_item->>'quantity')::numeric;
+    if v_qty <= 0 or v_qty > 100 then raise exception 'Invalid product quantity'; end if;
+    select p.name, p.price into v_product_name, v_price
+      from public.products p where p.id = v_product_id and p.is_available = true;
+    if not found then raise exception 'One of the selected products is unavailable'; end if;
+    v_total := v_total + v_price * v_qty;
+  end loop;
+
+  insert into public.orders(customer_name,phone,address,area,notes,subtotal,total,status,source)
+  values(trim(p_customer_name),trim(p_phone),trim(p_address),nullif(trim(coalesce(p_area,'')),''),nullif(trim(coalesce(p_notes,'')),''),v_total,v_total,'pending','website')
+  returning id into v_order_id;
+
+  for v_item in select value from jsonb_array_elements(p_items)
+  loop
+    v_product_id := v_item->>'product_id';
+    v_qty := (v_item->>'quantity')::numeric;
+    select p.name, p.price into v_product_name, v_price from public.products p where p.id = v_product_id and p.is_available = true;
+    insert into public.order_items(order_id,product_id,product_name,quantity,unit_price,line_total)
+    values(v_order_id,v_product_id,v_product_name,v_qty,v_price,v_price*v_qty);
+  end loop;
+
+  return jsonb_build_object('order_id',v_order_id,'total',v_total);
+end;
+$function$;
+
+revoke insert on public.orders, public.order_items from anon, authenticated;
+revoke all on function public.place_order(text,text,text,text,text,jsonb) from public;
+grant execute on function public.place_order(text,text,text,text,text,jsonb) to anon, authenticated;
