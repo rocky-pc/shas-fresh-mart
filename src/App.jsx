@@ -525,9 +525,12 @@ function App() {
 
           <div className="hero-photo">
             <img
-              src="https://i0.wp.com/thelocavore.in/wp-content/uploads/2024/02/IMG_2286-1-scaled.jpg?fit=1920%2C2560&ssl=1"
-              alt="Imperial Fresh Seafood on Ice"
-              onError={e => handleImageError(e, 'fish')}
+              src="/main-banner.jpg"
+              alt="Shas Fresh Mart — Imperial Fresh Seafood Stall"
+              onError={e => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "https://as1.ftcdn.net/v2/jpg/14/18/67/54/1000_F_1418675416_8r16d2sQvOnYppxpFY9TkLoMZdKrPDpO.jpg";
+              }}
             />
             <div className="floating-note">
               <span><Leaf size={22} /></span>
