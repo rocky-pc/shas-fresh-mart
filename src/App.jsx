@@ -1,14 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight, BadgeCheck, CheckCircle2, ChevronDown, ChevronRight,
   Fish, Heart, Leaf, MapPin, Menu, Minus, Plus, Search, ShieldCheck,
   ShoppingBag, ShoppingCart, Sparkles, Truck, X, LogIn, LogOut,
   ClipboardList, Phone, PackageCheck, Star, Award, Flame, Clock,
-  Scale, Utensils, MessageCircle, HelpCircle, Check, Info, RefreshCw, Zap
+  Scale, Utensils, MessageCircle, HelpCircle, Check, Info, RefreshCw, Zap,
+  Edit3, Trash2, PlusCircle, Eye, EyeOff, Tag, Settings, DollarSign,
+  AlertCircle, Volume2, UploadCloud, ExternalLink, Image, Layers, Sliders
 } from 'lucide-react';
 import { supabase, supabaseConfigured } from './lib/supabase';
 
-const PHONE = '6380723356';
+const DEFAULT_PHONE = '6380723356';
 
 const FALLBACK_IMAGES = {
   fish: 'https://images.unsplash.com/photo-1534043464124-3be32fe000c9?auto=format&fit=crop&w=900&q=85',
@@ -17,6 +19,18 @@ const FALLBACK_IMAGES = {
   mutton: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=85',
   default: 'https://images.unsplash.com/photo-1534043464124-3be32fe000c9?auto=format&fit=crop&w=900&q=85'
 };
+
+const PRESET_IMAGE_SUGGESTIONS = [
+  { name: 'Red Snapper (Sankara)', category: 'fish', url: 'https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png' },
+  { name: 'King Seer Fish (Vanjiram)', category: 'fish', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Vanjiram_fish.JPG?width=1200' },
+  { name: 'Silver Anchovies (Nethili)', category: 'fish', url: 'https://fresheatstrial.myshopify.com/cdn/shop/products/Anchovies_4122029675_grande.jpeg?v=1465875143' },
+  { name: 'White Pomfret (Vaval)', category: 'fish', url: 'https://dukaan.b-cdn.net/700x700/webp/591197/9886c76f-2a7c-4145-8dfe-fb6bc17c45e7.png' },
+  { name: 'Jumbo Tiger Prawns', category: 'prawns', url: 'https://static.freshtohome.com/media/catalog/product/cache/1/image/18ae109e34f485bd0b0c075abec96b2e/w/h/whiteprawn-small-whiteprawnswhole_3_2.jpg' },
+  { name: 'Fresh Sea Squid (Kadama)', category: 'prawns', url: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=90' },
+  { name: 'Blue Coastal Crab', category: 'prawns', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Fresh_Crab.jpg?width=1200' },
+  { name: 'Farm Fresh Chicken', category: 'chicken', url: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=90' },
+  { name: 'Prime Mountain Mutton', category: 'mutton', url: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=90' }
+];
 
 const cats = [
   { id: 'all', label: 'All Royal Cuts', icon: '✦' },
@@ -61,6 +75,18 @@ const seed = [
   is_available: true
 }));
 
+const DEFAULT_SETTINGS = {
+  delivery_charge: 40,
+  free_delivery_threshold: 500,
+  banner_offer_text: '🔥 ROYAL FRESHNESS: Free Express Delivery on orders above ₹500! Code: FRESH10 for 10% OFF',
+  offer_enabled: true,
+  offer_code: 'FRESH10',
+  offer_discount_percent: 10,
+  min_order_for_offer: 799,
+  store_open: true,
+  contact_phone: DEFAULT_PHONE
+};
+
 const RECIPES = [
   {
     id: 'curry',
@@ -96,11 +122,11 @@ const FAQS = [
   },
   {
     q: 'How do I place an order and track it?',
-    a: 'You can add items to your bag and proceed through our royal checkout, or click any "WhatsApp Order" button across the store. Your order summary with total, items, and address is sent straight to our WhatsApp helpline (+91 6380723356) for instant confirmation.'
+    a: 'Add your selected items to the shopping bag and click "Proceed to Delivery Details". You can enter your address and place the order directly online into our kitchen dispatch queue, with instant on-screen order confirmation!'
   },
   {
     q: 'What are your delivery hours and charges?',
-    a: 'We operate 7 days a week from 6:30 AM to 8:30 PM. Morning orders placed early are delivered with priority for weekend lunch. We offer free express delivery for orders meeting the qualifying bag amount!'
+    a: 'We operate 7 days a week from 6:30 AM to 8:30 PM. We offer Free Express Delivery on orders meeting our store threshold, delivered in insulated ice packs!'
   }
 ];
 
@@ -120,18 +146,53 @@ const TESTIMONIALS = [
   {
     name: 'Karthik Manikandan',
     location: 'Adyar',
-    text: 'Transparent weights, honest rates, and instant WhatsApp confirmation. The country chicken was tender and flavorful. Outstanding quality and truly royal service.',
+    text: 'Transparent weights, honest rates, and instant online confirmation. The country chicken was tender and flavorful. Outstanding quality and truly royal service.',
     item: 'Farm Fresh Chicken'
   }
 ];
 
-const money = n => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+const money = n => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 const catName = id => cats.find(c => c.id === id)?.label || id;
+
+function playOrderChime() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    
+    // First tone
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    gain1.gain.setValueAtTime(0.18, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.35);
+
+    // Second higher tone
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.12); // A5
+    gain2.gain.setValueAtTime(0.22, now + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.12);
+    osc2.stop(now + 0.55);
+  } catch (err) {
+    // Audio autoplay restrictions or not supported
+  }
+}
 
 function Logo({ admin = false }) {
   const [fallback, setFallback] = useState(false);
   return (
-    <a className="royal-brand" href="#home">
+    <a className="royal-brand" href="#home" onClick={(e) => { if (admin) { e.preventDefault(); } }}>
       <div className="brand-crest">
         <img
           src={fallback ? '/shas-logo.svg' : '/shas-brand.png'}
@@ -148,6 +209,7 @@ function Logo({ admin = false }) {
 }
 
 function App() {
+  // Storefront & Catalog state
   const [products, setProducts] = useState(seed);
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
@@ -155,48 +217,441 @@ function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkout, setCheckout] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [admin, setAdmin] = useState(location.pathname.startsWith('/admin'));
+  const [confirmedOrder, setConfirmedOrder] = useState(null);
+
+  // Store Settings (Delivery Charge, Free Delivery Threshold, Promo Offers)
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shas_store_settings');
+      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
+  });
+  const [settingsForm, setSettingsForm] = useState(settings);
+
+  // Customer Checkout Details
+  const [customer, setCustomer] = useState({ name: '', phone: '', address: '', area: '', notes: '' });
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+
+  // Admin & Routing state
+  const [admin, setAdmin] = useState(window.location.pathname.startsWith('/admin'));
   const [session, setSession] = useState(null);
-  const [orders, setOrders] = useState([]);
-  const [tab, setTab] = useState('orders');
+  const [tab, setTab] = useState('orders'); // 'orders' | 'products' | 'offers' | 'settings'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
-  const [customer, setCustomer] = useState({ name: '', phone: '', address: '', area: '', notes: '' });
+
+  // Orders Admin State
+  const [orders, setOrders] = useState([]);
+  const [orderFilter, setOrderFilter] = useState('all');
+  const [orderSearch, setOrderSearch] = useState('');
+  const ordersCountRef = useRef(0);
+
+  // Products Admin State
+  const [adminProductSearch, setAdminProductSearch] = useState('');
+  const [adminCategoryFilter, setAdminCategoryFilter] = useState('all');
+  const [newProductModal, setNewProductModal] = useState(false);
+  const [editingImageProduct, setEditingImageProduct] = useState(null);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    category: 'fish',
+    price: '',
+    unit: 'kg',
+    description: '',
+    image_url: '',
+    is_available: true
+  });
+
+  // UI state
   const [activeFaq, setActiveFaq] = useState(null);
   const [activeRecipe, setActiveRecipe] = useState('curry');
 
+  const PHONE = settings.contact_phone || DEFAULT_PHONE;
+
+  // Listen for browser navigation (back/forward)
   useEffect(() => {
+    const handlePopState = () => {
+      setAdmin(window.location.pathname.startsWith('/admin'));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Fetch initial catalog, session, and store settings
+  useEffect(() => {
+    loadProducts();
+    loadSettings();
+
+    if (supabaseConfigured) {
+      supabase.auth.getSession().then(({ data }) => {
+        setSession(data.session);
+      });
+
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, s) => {
+        setSession(s);
+      });
+
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    }
+  }, []);
+
+  // Real-time polling & sync for Admin Orders
+  useEffect(() => {
+    if (!admin || !session || !supabaseConfigured) return;
+
+    loadOrders();
+    const interval = setInterval(() => {
+      loadOrders(true); // background silent check
+    }, 8000);
+
+    // Supabase realtime channel
+    const channel = supabase
+      .channel('schema-orders-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        loadOrders(true);
+      })
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [admin, session]);
+
+  // Load products from Supabase
+  async function loadProducts() {
     if (!supabaseConfigured) return;
-    supabase.from('products').select('*').eq('is_available', true).then(({ data }) => {
-      if (data?.length) {
+    try {
+      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: true });
+      if (!error && data?.length) {
         setProducts(data.map(p => ({
           ...p,
           price: Number(p.price),
-          desc: p.description,
-          image: seed.find(s => s.id === p.id)?.image || p.image_url || seed[0].image,
-          chefTip: seed.find(s => s.id === p.id)?.chefTip || 'Prepared fresh daily upon order'
+          desc: p.description || '',
+          image: p.image_url || seed.find(s => s.id === p.id)?.image || FALLBACK_IMAGES[p.category] || FALLBACK_IMAGES.default,
+          chefTip: seed.find(s => s.id === p.id)?.chefTip || 'Prepared fresh upon your order',
+          is_available: p.is_available !== false
         })));
       }
-    });
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: l } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => l.subscription.unsubscribe();
-  }, []);
+    } catch (err) {
+      console.warn('Failed to load products:', err);
+    }
+  }
 
+  // Load store settings from Supabase
+  async function loadSettings() {
+    if (!supabaseConfigured) return;
+    try {
+      const { data, error } = await supabase.from('store_settings').select('*').eq('id', 'main').maybeSingle();
+      if (!error && data) {
+        const merged = {
+          delivery_charge: Number(data.delivery_charge ?? 40),
+          free_delivery_threshold: Number(data.free_delivery_threshold ?? 500),
+          banner_offer_text: data.banner_offer_text || DEFAULT_SETTINGS.banner_offer_text,
+          offer_enabled: data.offer_enabled !== false,
+          offer_code: data.offer_code || 'FRESH10',
+          offer_discount_percent: Number(data.offer_discount_percent ?? 10),
+          min_order_for_offer: Number(data.min_order_for_offer ?? 799),
+          store_open: data.store_open !== false,
+          contact_phone: data.contact_phone || DEFAULT_PHONE
+        };
+        setSettings(merged);
+        setSettingsForm(merged);
+        localStorage.setItem('shas_store_settings', JSON.stringify(merged));
+      }
+    } catch (err) {
+      console.warn('store_settings check:', err);
+    }
+  }
+
+  // Load orders from Supabase
+  async function loadOrders(silent = false) {
+    if (!supabaseConfigured) return;
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        if (!silent) setNotice('Unable to load orders. Check database permissions.');
+        return;
+      }
+
+      if (data) {
+        // Detect new order arrival for audio chime
+        if (ordersCountRef.current > 0 && data.length > ordersCountRef.current) {
+          playOrderChime();
+          setNotice(`🔔 New Customer Order received from ${data[0].customer_name}!`);
+        }
+        ordersCountRef.current = data.length;
+        setOrders(data);
+      }
+    } catch (err) {
+      console.warn('loadOrders err:', err);
+    }
+  }
+
+  // Admin Login
+  async function login(e) {
+    e.preventDefault();
+    setLoginError('');
+    if (!supabaseConfigured) {
+      setLoginError('Supabase is not configured yet.');
+      return;
+    }
+
+    setBusy(true);
+    let loginEmail = email.trim();
+    if (loginEmail === 'admin' || !loginEmail.includes('@')) {
+      loginEmail = 'admin@shasfreshmart.com';
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: password.trim()
+    });
+
+    if (error) {
+      setLoginError(error.message || 'Invalid credentials. Please use admin / admin123');
+      setBusy(false);
+      return;
+    }
+
+    const { data: p } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle();
+    if (p?.role !== 'admin' && loginEmail !== 'admin@shasfreshmart.com') {
+      await supabase.auth.signOut();
+      setLoginError('This account does not have store administrator privileges.');
+      setBusy(false);
+      return;
+    }
+
+    setSession(data.session);
+    setBusy(false);
+    loadOrders();
+    loadProducts();
+    loadSettings();
+  }
+
+  // Admin Logout
+  async function logout() {
+    if (supabaseConfigured) {
+      await supabase.auth.signOut();
+    }
+    setSession(null);
+    setOrders([]);
+  }
+
+  // Admin Order Status Update
+  async function updateOrderStatus(id, newStatus) {
+    if (!supabaseConfigured) return;
+    const { error } = await supabase.from('orders').update({
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+
+    if (error) {
+      setNotice('Could not update order status: ' + error.message);
+    } else {
+      setOrders(old => old.map(o => (o.id === id ? { ...o, status: newStatus } : o)));
+      setNotice(`Order status changed to "${newStatus.replace(/_/g, ' ')}"`);
+    }
+  }
+
+  // Admin Product Price Update
+  async function updateProductPrice(id, newPrice) {
+    const val = parseFloat(newPrice);
+    if (isNaN(val) || val < 0) {
+      setNotice('Please enter a valid price amount.');
+      return;
+    }
+    if (!supabaseConfigured) {
+      setProducts(old => old.map(p => (p.id === id ? { ...p, price: val } : p)));
+      setNotice('Price updated locally.');
+      return;
+    }
+    const { error } = await supabase.from('products').update({
+      price: val,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+
+    if (error) {
+      setNotice('Could not update price in DB: ' + error.message);
+    } else {
+      setProducts(old => old.map(p => (p.id === id ? { ...p, price: val } : p)));
+      setNotice(`Price for product updated to ${money(val)}`);
+    }
+  }
+
+  // Admin Product Image Update
+  async function updateProductImage(id, newUrl) {
+    if (!newUrl?.trim()) return;
+    if (!supabaseConfigured) {
+      setProducts(old => old.map(p => (p.id === id ? { ...p, image_url: newUrl, image: newUrl } : p)));
+      setEditingImageProduct(null);
+      return;
+    }
+    const { error } = await supabase.from('products').update({
+      image_url: newUrl.trim(),
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+
+    if (error) {
+      setNotice('Could not update image in DB: ' + error.message);
+    } else {
+      setProducts(old => old.map(p => (p.id === id ? { ...p, image_url: newUrl.trim(), image: newUrl.trim() } : p)));
+      setNotice('Product image updated successfully!');
+      setEditingImageProduct(null);
+    }
+  }
+
+  // Admin Product Stock Availability Toggle
+  async function toggleProductAvailability(id, currentStatus) {
+    const nextStatus = !currentStatus;
+    if (!supabaseConfigured) {
+      setProducts(old => old.map(p => (p.id === id ? { ...p, is_available: nextStatus } : p)));
+      setNotice(nextStatus ? 'Marked In Stock' : 'Marked Out of Stock');
+      return;
+    }
+    const { error } = await supabase.from('products').update({
+      is_available: nextStatus,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+
+    if (error) {
+      setNotice('Could not update stock status: ' + error.message);
+    } else {
+      setProducts(old => old.map(p => (p.id === id ? { ...p, is_available: nextStatus } : p)));
+      setNotice(nextStatus ? 'Product is now In Stock!' : 'Product marked Out of Stock!');
+    }
+  }
+
+  // Admin Product Delete
+  async function deleteProduct(id, name) {
+    if (!window.confirm(`Are you sure you want to delete "${name}" from the store catalog?`)) return;
+    if (!supabaseConfigured) {
+      setProducts(old => old.filter(p => p.id !== id));
+      setNotice(`Product "${name}" deleted.`);
+      return;
+    }
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) {
+      setNotice('Could not delete product: ' + error.message);
+    } else {
+      setProducts(old => old.filter(p => p.id !== id));
+      setNotice(`Product "${name}" removed from catalog.`);
+    }
+  }
+
+  // Admin Add Product
+  async function addProduct(e) {
+    e.preventDefault();
+    if (!newProduct.name || !newProduct.price) {
+      setNotice('Please provide product name and price.');
+      return;
+    }
+    const priceVal = parseFloat(newProduct.price);
+    const slug = newProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString().slice(-4);
+    const id = slug;
+    const entry = {
+      id,
+      slug,
+      name: newProduct.name.trim(),
+      category: newProduct.category,
+      price: priceVal,
+      unit: newProduct.unit || 'kg',
+      description: newProduct.description?.trim() || 'Freshly sourced quality cut.',
+      image_url: newProduct.image_url?.trim() || FALLBACK_IMAGES[newProduct.category] || FALLBACK_IMAGES.default,
+      is_available: newProduct.is_available !== false
+    };
+
+    setBusy(true);
+    if (supabaseConfigured) {
+      const { error } = await supabase.from('products').insert([entry]);
+      setBusy(false);
+      if (error) {
+        setNotice('Could not add product to DB: ' + error.message);
+        return;
+      }
+    } else {
+      setBusy(false);
+    }
+
+    setProducts(old => [...old, {
+      ...entry,
+      image: entry.image_url,
+      desc: entry.description,
+      chefTip: 'Prepared fresh upon your order'
+    }]);
+    setNotice(`Product "${entry.name}" added successfully to store!`);
+    setNewProductModal(false);
+    setNewProduct({
+      name: '',
+      category: 'fish',
+      price: '',
+      unit: 'kg',
+      description: '',
+      image_url: '',
+      is_available: true
+    });
+  }
+
+  // Admin Save Settings
+  async function saveSettings(e) {
+    if (e) e.preventDefault();
+    setBusy(true);
+    const updated = {
+      ...settingsForm,
+      delivery_charge: Number(settingsForm.delivery_charge || 40),
+      free_delivery_threshold: Number(settingsForm.free_delivery_threshold || 500),
+      offer_discount_percent: Number(settingsForm.offer_discount_percent || 10),
+      min_order_for_offer: Number(settingsForm.min_order_for_offer || 799)
+    };
+
+    setSettings(updated);
+    localStorage.setItem('shas_store_settings', JSON.stringify(updated));
+
+    if (supabaseConfigured) {
+      try {
+        const { error } = await supabase.from('store_settings').upsert({
+          id: 'main',
+          ...updated,
+          updated_at: new Date().toISOString()
+        });
+        if (error) {
+          console.warn('store_settings upsert error:', error);
+          setNotice('Settings saved locally! (Run the store_settings migration in Supabase SQL editor to sync)');
+        } else {
+          setNotice('Store settings saved successfully to Supabase DB!');
+        }
+      } catch (err) {
+        setNotice('Settings saved locally!');
+      }
+    } else {
+      setNotice('Settings saved locally!');
+    }
+    setBusy(false);
+  }
+
+  // Cart calculations
   const items = useMemo(() => Object.values(cart), [cart]);
   const count = items.reduce((a, i) => a + i.quantity, 0);
   const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
 
-  const shown = products.filter(p => {
-    const matchesCat = category === 'all' || p.category === category;
-    const query = search.toLowerCase().trim();
-    const matchesSearch = !query || `${p.name} ${p.desc || p.description} ${p.chefTip || ''}`.toLowerCase().includes(query);
-    return matchesCat && matchesSearch;
-  });
+  const deliveryCharge = subtotal >= (settings.free_delivery_threshold || 500) ? 0 : (settings.delivery_charge || 40);
+  const discountAmount = (appliedPromo && settings.offer_enabled && subtotal >= (settings.min_order_for_offer || 799))
+    ? Math.round((subtotal * (settings.offer_discount_percent || 10)) / 100)
+    : 0;
+  const grandTotal = Math.max(0, subtotal + deliveryCharge - discountAmount);
 
+  // Cart quantity controls
   const add = p => {
     setCart(old => ({
       ...old,
@@ -219,231 +674,911 @@ function App() {
     e.currentTarget.src = FALLBACK_IMAGES[cat] || FALLBACK_IMAGES.default;
   };
 
-  const quickWa = product => {
-    const text = encodeURIComponent(
-      `👑 Hi Shas Fresh Mart! I would like to order *${product.name}* (${product.price > 0 ? money(product.price) + '/kg' : 'Inquiring today\'s market rate'}). Could you please confirm availability and earliest delivery?`
-    );
-    window.open(`https://wa.me/91${PHONE}?text=${text}`, '_blank', 'noopener,noreferrer');
+  // Customer applies coupon
+  const handleApplyPromo = (e) => {
+    e.preventDefault();
+    const clean = promoInput.trim().toUpperCase();
+    if (!settings.offer_enabled) {
+      setNotice('No promotional offer is currently active.');
+      return;
+    }
+    if (clean !== (settings.offer_code || 'FRESH10').toUpperCase()) {
+      setNotice(`Invalid promo code. Use code "${settings.offer_code || 'FRESH10'}" for ${settings.offer_discount_percent}% OFF!`);
+      return;
+    }
+    if (subtotal < (settings.min_order_for_offer || 799)) {
+      setNotice(`Code ${clean} requires a minimum order of ${money(settings.min_order_for_offer || 799)}.`);
+      return;
+    }
+    setAppliedPromo(clean);
+    setNotice(`🎉 Promo code ${clean} applied! You saved ${money(Math.round((subtotal * settings.offer_discount_percent) / 100))}`);
   };
 
-  async function login(e) {
+  // Customer Places Order directly into Supabase DB
+  async function placeCustomerOrder(e) {
     e.preventDefault();
-    setLoginError('');
-    if (!supabaseConfigured) {
-      setLoginError('Supabase is not configured yet.');
+    if (items.length === 0) {
+      setNotice('Your shopping bag is empty.');
       return;
     }
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setLoginError(error.message);
-      return;
-    }
-    const { data: p } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle();
-    if (p?.role !== 'admin') {
-      await supabase.auth.signOut();
-      setLoginError('This account does not have admin access.');
-      return;
-    }
-    setSession(data.session);
-    loadOrders();
-  }
-
-  async function loadOrders() {
-    if (!supabaseConfigured) return;
-    const { data, error } = await supabase.from('orders').select('*,order_items(*)').order('created_at', { ascending: false });
-    if (error) setNotice('Unable to load orders. Check admin profile and database policies.');
-    else setOrders(data || []);
-  }
-
-  useEffect(() => {
-    if (session && admin) loadOrders();
-  }, [session, admin]);
-
-  async function status(id, value) {
-    const { error } = await supabase.from('orders').update({ status: value }).eq('id', id);
-    if (error) setNotice('Could not update order status.');
-    else setOrders(old => old.map(o => o.id === id ? { ...o, status: value } : o));
-  }
-
-  async function place(e) {
-    e.preventDefault();
-    const orderLines = items.map(i => `• *${i.name}* x ${i.quantity} kg — ${money(i.price * i.quantity)}`).join('\n');
-    const noteText = customer.notes ? `\n📝 *Cleaning/Cut Notes:* ${customer.notes}` : '';
-    const formattedWaMsg = encodeURIComponent(
-      `👑 *SHAS FRESH MART — ROYAL ORDER REQUEST*\n` +
-      `-----------------------------------------\n` +
-      `${orderLines}\n` +
-      `-----------------------------------------\n` +
-      `💰 *Estimated Subtotal:* ${money(subtotal)}\n\n` +
-      `👤 *Customer Name:* ${customer.name}\n` +
-      `📞 *Mobile:* ${customer.phone}\n` +
-      `📍 *Address:* ${customer.address}${customer.area ? ', ' + customer.area : ''}` +
-      `${noteText}\n\n` +
-      `_Please confirm availability and dispatch time. Thank you!_`
-    );
-
-    if (!supabaseConfigured) {
-      setCart({});
-      setCheckout(false);
-      setCartOpen(false);
-      setCustomer({ name: '', phone: '', address: '', area: '', notes: '' });
-      setNotice('Royal order compiled! Opening WhatsApp to confirm dispatch with the shop...');
-      window.open(`https://wa.me/91${PHONE}?text=${formattedWaMsg}`, '_blank', 'noopener,noreferrer');
+    if (!customer.name.trim() || !customer.phone.trim() || !customer.address.trim()) {
+      setNotice('Please provide your name, phone number, and delivery address.');
       return;
     }
 
     setBusy(true);
+
+    const notesSummary = [
+      customer.notes ? `Butchery instructions: ${customer.notes}` : '',
+      appliedPromo ? `Promo: ${appliedPromo} (-₹${discountAmount})` : '',
+      deliveryCharge === 0 ? 'Free Express Delivery applied' : `Delivery fee: ₹${deliveryCharge}`
+    ].filter(Boolean).join(' | ');
+
+    if (!supabaseConfigured) {
+      setBusy(false);
+      const fakeId = 'SHAS-' + Math.floor(100000 + Math.random() * 900000);
+      setConfirmedOrder({
+        order_id: fakeId,
+        customer: { ...customer },
+        items: [...items],
+        subtotal,
+        deliveryCharge,
+        discountAmount,
+        total: grandTotal
+      });
+      setCart({});
+      setCheckout(false);
+      setCartOpen(false);
+      setCustomer({ name: '', phone: '', address: '', area: '', notes: '' });
+      setAppliedPromo(null);
+      return;
+    }
+
+    // Call Supabase RPC place_order to compute prices server-side and insert to DB
     const { data, error } = await supabase.rpc('place_order', {
-      p_customer_name: customer.name,
-      p_phone: customer.phone,
-      p_address: customer.address,
-      p_area: customer.area || null,
-      p_notes: customer.notes || null,
+      p_customer_name: customer.name.trim(),
+      p_phone: customer.phone.trim(),
+      p_address: customer.address.trim(),
+      p_area: customer.area?.trim() || null,
+      p_notes: notesSummary || null,
       p_items: items.map(i => ({ product_id: i.id, quantity: i.quantity }))
     });
+
     setBusy(false);
 
     if (error) {
-      setNotice(error.message || 'Order could not be saved to DB. Forwarding via WhatsApp...');
+      setNotice('Order placement error: ' + error.message);
+      return;
     }
 
+    const orderId = data?.order_id || 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+
+    // Save confirmed order to display the luxurious Confirmation Modal
+    setConfirmedOrder({
+      order_id: orderId,
+      customer: { ...customer },
+      items: [...items],
+      subtotal,
+      deliveryCharge,
+      discountAmount,
+      total: grandTotal
+    });
+
+    // Reset customer cart and checkout form
     setCart({});
     setCheckout(false);
     setCartOpen(false);
     setCustomer({ name: '', phone: '', address: '', area: '', notes: '' });
-    setNotice('Imperial order placed! Opening WhatsApp to notify Shas Fresh Mart...');
-    window.open(`https://wa.me/91${PHONE}?text=${formattedWaMsg}`, '_blank', 'noopener,noreferrer');
+    setAppliedPromo(null);
   }
 
-  // Preserve admin layout functionality
+  // Filter storefront items
+  const shownProducts = products.filter(p => {
+    if (!p.is_available) return false;
+    const matchesCat = category === 'all' || p.category === category;
+    const query = search.toLowerCase().trim();
+    const matchesSearch = !query || `${p.name} ${p.desc || p.description} ${p.chefTip || ''}`.toLowerCase().includes(query);
+    return matchesCat && matchesSearch;
+  });
+
+  // Filter admin products
+  const shownAdminProducts = products.filter(p => {
+    const matchesCat = adminCategoryFilter === 'all' || p.category === adminCategoryFilter;
+    const query = adminProductSearch.toLowerCase().trim();
+    const matchesSearch = !query || `${p.name} ${p.category} ${p.description || ''}`.toLowerCase().includes(query);
+    return matchesCat && matchesSearch;
+  });
+
+  // Filter admin orders
+  const shownOrders = orders.filter(o => {
+    const matchesFilter = orderFilter === 'all' || o.status === orderFilter;
+    const query = orderSearch.toLowerCase().trim();
+    const matchesQuery = !query ||
+      `${o.customer_name} ${o.phone} ${o.address} ${o.id}`.toLowerCase().includes(query);
+    return matchesFilter && matchesQuery;
+  });
+
+  const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+
+  // ==========================================================================
+  // ADMIN WORKSPACE RENDERING
+  // ==========================================================================
   if (admin) {
+    // 1. BEFORE LOGIN: Dedicated Admin Login Portal (NO sidebar visible!)
+    if (!session) {
+      return (
+        <div className="admin-login-page">
+          <div className="login-card-luxury">
+            <div className="login-crest">
+              <img src="/shas-brand.png" alt="Shas Fresh Mart" onError={e => { e.currentTarget.src = '/shas-logo.svg'; }} />
+            </div>
+            <div className="login-badge">
+              <ShieldCheck size={14} /> ADMINISTRATIVE WORKSPACE
+            </div>
+            <h2>Admin Portal Login</h2>
+            <p>Sign in to manage live store orders, edit product pricing & images, configure banner offers and delivery charges.</p>
+
+            <form onSubmit={login}>
+              <label>
+                Username or Email
+                <div className="input-group">
+                  <input
+                    type="text"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="admin (or admin@shasfreshmart.com)"
+                  />
+                </div>
+              </label>
+
+              <label>
+                Password
+                <div className="input-group">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="admin123"
+                  />
+                  <button
+                    type="button"
+                    className="pw-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label="Toggle password visibility"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+
+              {loginError && (
+                <div className="error-alert">
+                  <AlertCircle size={16} />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <div className="login-quick-hint">
+                <span>Credentials: <strong>admin</strong> / <strong>admin123</strong></span>
+                <button
+                  type="button"
+                  className="chip-hint"
+                  onClick={() => {
+                    setEmail('admin');
+                    setPassword('admin123');
+                  }}
+                >
+                  Auto-Fill
+                </button>
+              </div>
+
+              <button className="primary-btn full login-btn" type="submit" disabled={busy}>
+                {busy ? (
+                  <>
+                    <RefreshCw className="spin" size={17} /> Signing In...
+                  </>
+                ) : (
+                  <>
+                    <LogIn size={18} /> Sign In to Admin Workspace
+                  </>
+                )}
+              </button>
+
+              <div className="login-footer">
+                <button
+                  type="button"
+                  className="back-store-btn"
+                  onClick={() => {
+                    window.history.pushState({}, '', '/');
+                    setAdmin(false);
+                  }}
+                >
+                  ← Return to Customer Storefront
+                </button>
+              </div>
+            </form>
+          </div>
+          {notice && (
+            <div className="toast" role="status">
+              <span>{notice}</span>
+              <button onClick={() => setNotice('')}><X size={15} /></button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // 2. AFTER LOGIN: Full Admin Workspace WITH Side Panel & Management Tabs
     return (
       <div className="admin-layout">
+        {/* Admin Sidebar Navigation */}
         <aside className="admin-sidebar">
           <Logo admin />
           <p className="side-caption">STORE WORKSPACE</p>
-          <button className={tab === 'orders' ? 'side-item selected' : 'side-item'} onClick={() => setTab('orders')}>
-            <ClipboardList size={18} /> Orders
+
+          <button
+            className={tab === 'orders' ? 'side-item selected' : 'side-item'}
+            onClick={() => setTab('orders')}
+          >
+            <ClipboardList size={18} />
+            <span>Orders</span>
+            {pendingOrdersCount > 0 && <span className="badge-count">{pendingOrdersCount}</span>}
           </button>
-          <button className={tab === 'products' ? 'side-item selected' : 'side-item'} onClick={() => setTab('products')}>
-            <PackageCheck size={18} /> Products
+
+          <button
+            className={tab === 'products' ? 'side-item selected' : 'side-item'}
+            onClick={() => setTab('products')}
+          >
+            <PackageCheck size={18} />
+            <span>Products</span>
           </button>
+
+          <button
+            className={tab === 'offers' ? 'side-item selected' : 'side-item'}
+            onClick={() => setTab('offers')}
+          >
+            <Tag size={18} />
+            <span>Offers & Banner</span>
+          </button>
+
+          <button
+            className={tab === 'settings' ? 'side-item selected' : 'side-item'}
+            onClick={() => setTab('settings')}
+          >
+            <Sliders size={18} />
+            <span>Delivery & Store</span>
+          </button>
+
           <div className="sidebar-foot">
-            <span className="live-dot" /> Store dashboard
-            <button onClick={() => { history.pushState({}, '', '/'); setAdmin(false); }}>
-              View store <ArrowRight size={14} />
+            <span className="live-dot" /> Connected to Supabase
+            <button
+              onClick={() => {
+                window.history.pushState({}, '', '/');
+                setAdmin(false);
+              }}
+            >
+              View Storefront <ArrowRight size={14} />
             </button>
           </div>
         </aside>
+
+        {/* Admin Main Body */}
         <main className="admin-main">
           <header className="admin-head">
             <div>
-              <span className="eyebrow">SHAS FRESH MART</span>
-              <h1>Store management</h1>
+              <span className="eyebrow">SHAS FRESH MART ADMIN</span>
+              <h1>
+                {tab === 'orders' && 'Live Customer Orders'}
+                {tab === 'products' && 'Product Catalogue & Inventory'}
+                {tab === 'offers' && 'Promotions & Banner Offers'}
+                {tab === 'settings' && 'Delivery & Store Operations'}
+              </h1>
             </div>
-            {session && (
-              <button className="outline-btn" onClick={async () => { await supabase.auth.signOut(); setSession(null); }}>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="outline-btn" onClick={logout}>
                 <LogOut size={16} /> Sign out
               </button>
-            )}
-          </header>
-          {!session ? (
-            <div className="login-center">
-              <form className="login-card" onSubmit={login}>
-                <div className="login-symbol"><ShieldCheck size={27} /></div>
-                <span className="eyebrow">ADMIN ACCESS</span>
-                <h2>Welcome back</h2>
-                <p>Sign in to manage orders and store activity.</p>
-                <label>
-                  Email address
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@shasfreshmart.com" />
-                </label>
-                <label>
-                  Password
-                  <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" />
-                </label>
-                {loginError && <p className="error-text">{loginError}</p>}
-                <button className="primary-btn full" type="submit"><LogIn size={17} /> Sign in securely</button>
-                <small className="secure-note"><ShieldCheck size={14} /> Secured by Supabase Auth and RLS</small>
-              </form>
             </div>
-          ) : tab === 'orders' ? (
+          </header>
+
+          {/* TAB 1: ORDERS DASHBOARD */}
+          {tab === 'orders' && (
             <>
+              {/* Order Stats */}
               <div className="stats-row">
-                <div><span>All orders</span><strong>{orders.length}</strong><small>Orders received</small></div>
-                <div><span>Pending</span><strong>{orders.filter(o => o.status === 'pending').length}</strong><small>Needs attention</small></div>
-                <div><span>Confirmed</span><strong>{orders.filter(o => o.status === 'confirmed').length}</strong><small>Being prepared</small></div>
-                <div><span>Order value</span><strong>{money(orders.filter(o => o.status !== 'cancelled').reduce((n, o) => n + Number(o.total || 0), 0))}</strong><small>Non-cancelled orders</small></div>
+                <div>
+                  <span>Total Orders</span>
+                  <strong>{orders.length}</strong>
+                  <small>Recorded in Supabase</small>
+                </div>
+                <div>
+                  <span>Pending Attention</span>
+                  <strong style={{ color: '#fbbf24' }}>{pendingOrdersCount}</strong>
+                  <small>Awaiting confirmation</small>
+                </div>
+                <div>
+                  <span>In Kitchen / Prep</span>
+                  <strong style={{ color: '#60a5fa' }}>{orders.filter(o => o.status === 'confirmed' || o.status === 'preparing').length}</strong>
+                  <small>Under custom butchery</small>
+                </div>
+                <div>
+                  <span>Total Revenue</span>
+                  <strong>
+                    {money(orders.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + Number(o.total || 0), 0))}
+                  </strong>
+                  <small>Non-cancelled orders</small>
+                </div>
               </div>
+
+              {/* Toolbar & Filter */}
+              <div className="admin-toolbar">
+                <div className="admin-search-box">
+                  <Search size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search by customer name, phone, order ID..."
+                    value={orderSearch}
+                    onChange={e => setOrderSearch(e.target.value)}
+                  />
+                  {orderSearch && <button onClick={() => setOrderSearch('')} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={14} /></button>}
+                </div>
+                <button className="outline-btn" onClick={() => loadOrders(false)}>
+                  <RefreshCw size={15} /> Refresh Orders
+                </button>
+              </div>
+
+              <div className="filter-chips">
+                {['all', 'pending', 'confirmed', 'preparing', 'out_for_delivery', 'completed', 'cancelled'].map(st => (
+                  <button
+                    key={st}
+                    className={orderFilter === st ? 'filter-chip active' : 'filter-chip'}
+                    onClick={() => setOrderFilter(st)}
+                  >
+                    {st === 'all' ? 'All Orders' : st.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    {st === 'pending' && pendingOrdersCount > 0 ? ` (${pendingOrdersCount})` : ''}
+                  </button>
+                ))}
+              </div>
+
+              {/* Orders List */}
               <section className="admin-panel">
                 <div className="panel-title">
-                  <div><h2>Recent orders</h2><p>Customer details and fulfilment status.</p></div>
-                  <button className="outline-btn" onClick={loadOrders}>Refresh</button>
+                  <div>
+                    <h2>Orders Feed ({shownOrders.length})</h2>
+                    <p>Live incoming orders from the customer storefront. Automatically synced with Supabase.</p>
+                  </div>
                 </div>
-                {orders.length === 0 ? (
-                  <div className="empty-state"><ShoppingBag size={30} /><h3>No orders yet</h3><p>Customer orders will show here.</p></div>
-                ) : orders.map(o => (
-                  <article className="order-card" key={o.id}>
-                    <div className="order-head">
-                      <div>
-                        <small>ORDER {o.id.slice(0, 8).toUpperCase()} · {new Date(o.created_at).toLocaleString('en-IN')}</small>
-                        <h3>{o.customer_name}</h3>
+
+                {shownOrders.length === 0 ? (
+                  <div className="empty-state">
+                    <ShoppingBag size={38} />
+                    <h3>No orders found</h3>
+                    <p>When customers place orders on the store, they will appear here in real-time.</p>
+                  </div>
+                ) : (
+                  shownOrders.map(o => (
+                    <article className="order-card" key={o.id}>
+                      <div className="order-head">
+                        <div>
+                          <small>ORDER #{o.id.slice(0, 8).toUpperCase()} • {new Date(o.created_at).toLocaleString('en-IN')}</small>
+                          <h3>{o.customer_name}</h3>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span className={`status-pill status-${o.status}`}>
+                            {o.status.replace(/_/g, ' ')}
+                          </span>
+                          <select
+                            value={o.status}
+                            onChange={e => updateOrderStatus(o.id, e.target.value)}
+                            aria-label="Change order status"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="preparing">Preparing</option>
+                            <option value="out_for_delivery">Out for delivery</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                        </div>
                       </div>
-                      <select value={o.status} onChange={e => status(o.id, e.target.value)}>
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="preparing">Preparing</option>
-                        <option value="out_for_delivery">Out for delivery</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </div>
-                    <p><Phone size={15} /> {o.phone}</p>
-                    <p><MapPin size={15} /> {o.address}{o.area ? ', ' + o.area : ''}</p>
-                    <div className="order-lines">
-                      {(o.order_items || []).map((it, i) => (
-                        <div key={i}><span>{it.product_name} × {it.quantity} kg</span><strong>{money(it.line_total)}</strong></div>
-                      ))}
-                    </div>
-                    {o.notes && <p className="order-note">Note: {o.notes}</p>}
-                    <div className="order-total"><span>Total</span><strong>{money(o.total)}</strong></div>
-                    <a className="order-wa" href={'https://wa.me/91' + o.phone.replace(/\D/g, '') + '?text=' + encodeURIComponent('Hi ' + o.customer_name + ', your Shas Fresh Mart order is ' + o.status.replaceAll('_', ' ') + '.')} target="_blank" rel="noreferrer">
-                      Message customer on WhatsApp <ArrowRight size={15} />
-                    </a>
-                  </article>
-                ))}
+
+                      {/* Customer Details Box */}
+                      <div className="customer-detail-badge">
+                        <p>
+                          <Phone size={14} /> Mobile: <a href={`tel:+91${o.phone.replace(/\D/g, '')}`}>{o.phone}</a>
+                        </p>
+                        <p>
+                          <MapPin size={14} /> Address: {o.address}{o.area ? `, ${o.area}` : ''}
+                        </p>
+                        {o.notes && (
+                          <div className="notes-pill">
+                            <strong>📝 Custom Butchery & Cleaning:</strong> {o.notes}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Itemized Order Lines */}
+                      <div className="order-lines">
+                        {(o.order_items || []).map((it, idx) => (
+                          <div key={it.id || idx}>
+                            <span>{it.product_name} × {it.quantity} kg</span>
+                            <strong>{money(it.line_total)}</strong>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="order-total">
+                        <span>Total Payable</span>
+                        <strong>{money(o.total)}</strong>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
+                        <a
+                          className="order-wa"
+                          href={`https://wa.me/91${o.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${o.customer_name}, your Shas Fresh Mart order #${o.id.slice(0, 8).toUpperCase()} is currently ${o.status.replace(/_/g, ' ')}. Thank you!`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <MessageCircle size={15} /> Message Customer on WhatsApp <ArrowRight size={14} />
+                        </a>
+                      </div>
+                    </article>
+                  ))
+                )}
               </section>
             </>
-          ) : (
-            <section className="admin-panel">
-              <div className="panel-title"><div><h2>Product catalogue</h2><p>Manage availability and prices in Supabase.</p></div></div>
-              {products.map(p => (
-                <div className="product-admin-row" key={p.id}>
-                  <span>{p.name}<small>{catName(p.category)}</small></span>
-                  <strong>{money(p.price)} / kg</strong>
+          )}
+
+          {/* TAB 2: PRODUCTS MANAGEMENT */}
+          {tab === 'products' && (
+            <>
+              <div className="admin-toolbar">
+                <div className="admin-search-box">
+                  <Search size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search products in catalog..."
+                    value={adminProductSearch}
+                    onChange={e => setAdminProductSearch(e.target.value)}
+                  />
+                  {adminProductSearch && <button onClick={() => setAdminProductSearch('')} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={14} /></button>}
                 </div>
-              ))}
-            </section>
+                <button className="primary-btn" onClick={() => setNewProductModal(true)}>
+                  <PlusCircle size={16} /> Add New Product
+                </button>
+              </div>
+
+              <div className="filter-chips">
+                {cats.map(c => (
+                  <button
+                    key={c.id}
+                    className={adminCategoryFilter === c.id ? 'filter-chip active' : 'filter-chip'}
+                    onClick={() => setAdminCategoryFilter(c.id)}
+                  >
+                    {c.icon} {c.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="product-admin-grid">
+                {shownAdminProducts.map(p => (
+                  <div
+                    className={p.is_available ? 'product-admin-card' : 'product-admin-card out-of-stock'}
+                    key={p.id}
+                  >
+                    <div className="prod-admin-thumb">
+                      <img src={p.image || p.image_url} alt={p.name} onError={e => handleImageError(e, p.category)} />
+                      <div className="prod-admin-badges">
+                        <span className="badge-cat">{catName(p.category)}</span>
+                        <span className={p.is_available ? 'badge-stock in' : 'badge-stock out'}>
+                          {p.is_available ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="prod-admin-body">
+                      <h3>{p.name}</h3>
+                      <p>{p.desc || p.description || 'Fresh daily catch'}</p>
+
+                      {/* In-place Price Editor */}
+                      <div className="price-edit-row">
+                        <span>₹</span>
+                        <input
+                          type="number"
+                          defaultValue={p.price}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') updateProductPrice(p.id, e.currentTarget.value);
+                          }}
+                          id={`price-input-${p.id}`}
+                          aria-label={`Price for ${p.name}`}
+                        />
+                        <small>/ {p.unit || 'kg'}</small>
+                        <button
+                          className="btn-mini-save"
+                          onClick={() => {
+                            const val = document.getElementById(`price-input-${p.id}`)?.value;
+                            updateProductPrice(p.id, val);
+                          }}
+                        >
+                          Save
+                        </button>
+                      </div>
+
+                      <div className="prod-admin-actions">
+                        <button
+                          className="stock-toggle-btn"
+                          onClick={() => toggleProductAvailability(p.id, p.is_available)}
+                        >
+                          {p.is_available ? 'Mark Out of Stock' : 'Mark In Stock'}
+                        </button>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            className="stock-toggle-btn"
+                            onClick={() => setEditingImageProduct(p)}
+                            title="Change product image"
+                          >
+                            <Image size={15} /> Change Image
+                          </button>
+                          <button
+                            className="icon-btn-danger"
+                            onClick={() => deleteProduct(p.id, p.name)}
+                            title="Delete product"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* TAB 3: OFFERS & PROMO BANNER */}
+          {tab === 'offers' && (
+            <div className="settings-grid">
+              <div className="settings-card">
+                <h3>Storefront Announcement Banner</h3>
+                <p>Customize the royal marquee banner shown at the very top of the customer shop.</p>
+                <form onSubmit={saveSettings}>
+                  <div className="settings-form-row">
+                    <label>Banner Announcement Text</label>
+                    <textarea
+                      rows={3}
+                      value={settingsForm.banner_offer_text}
+                      onChange={e => setSettingsForm({ ...settingsForm, banner_offer_text: e.target.value })}
+                      placeholder="e.g. 🔥 ROYAL FRESHNESS: Free Express Delivery on orders above ₹500! Code: FRESH10 for 10% OFF"
+                    />
+                  </div>
+
+                  <div className="offer-preview-box">
+                    <small>LIVE BANNER PREVIEW:</small>
+                    <p style={{ margin: '6px 0 0', fontWeight: 700 }}>{settingsForm.banner_offer_text}</p>
+                  </div>
+
+                  <button className="primary-btn" type="submit" disabled={busy} style={{ marginTop: 18 }}>
+                    Save Banner Announcement
+                  </button>
+                </form>
+              </div>
+
+              <div className="settings-card">
+                <h3>Promo Code & Cart Discount</h3>
+                <p>Set a promotional discount code that customers can apply at checkout.</p>
+                <form onSubmit={saveSettings}>
+                  <div className="settings-form-row">
+                    <label>Offer Status</label>
+                    <select
+                      value={settingsForm.offer_enabled ? 'enabled' : 'disabled'}
+                      onChange={e => setSettingsForm({ ...settingsForm, offer_enabled: e.target.value === 'enabled' })}
+                    >
+                      <option value="enabled">Active / Enabled</option>
+                      <option value="disabled">Inactive / Disabled</option>
+                    </select>
+                  </div>
+
+                  <div className="settings-form-row">
+                    <label>Coupon Code</label>
+                    <input
+                      type="text"
+                      value={settingsForm.offer_code}
+                      onChange={e => setSettingsForm({ ...settingsForm, offer_code: e.target.value.toUpperCase() })}
+                      placeholder="FRESH10"
+                    />
+                  </div>
+
+                  <div className="settings-form-row">
+                    <label>Discount Percentage (%)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={settingsForm.offer_discount_percent}
+                      onChange={e => setSettingsForm({ ...settingsForm, offer_discount_percent: e.target.value })}
+                      placeholder="10"
+                    />
+                  </div>
+
+                  <div className="settings-form-row">
+                    <label>Minimum Cart Value for Offer (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={settingsForm.min_order_for_offer}
+                      onChange={e => setSettingsForm({ ...settingsForm, min_order_for_offer: e.target.value })}
+                      placeholder="799"
+                    />
+                  </div>
+
+                  <button className="primary-btn" type="submit" disabled={busy}>
+                    Save Offer Rules
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: DELIVERY & STORE OPERATIONS */}
+          {tab === 'settings' && (
+            <div className="settings-grid">
+              <div className="settings-card">
+                <h3>Delivery Charges & Threshold</h3>
+                <p>Configure the standard delivery fee and qualifying cart value for Free Express Delivery.</p>
+                <form onSubmit={saveSettings}>
+                  <div className="settings-form-row">
+                    <label>Standard Delivery Charge (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={settingsForm.delivery_charge}
+                      onChange={e => setSettingsForm({ ...settingsForm, delivery_charge: e.target.value })}
+                      placeholder="40"
+                    />
+                    <small style={{ color: 'var(--text-muted)' }}>Charged when cart is below free delivery threshold.</small>
+                  </div>
+
+                  <div className="settings-form-row">
+                    <label>Free Delivery Threshold (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={settingsForm.free_delivery_threshold}
+                      onChange={e => setSettingsForm({ ...settingsForm, free_delivery_threshold: e.target.value })}
+                      placeholder="500"
+                    />
+                    <small style={{ color: 'var(--text-muted)' }}>Orders at or above this amount automatically receive Free Delivery.</small>
+                  </div>
+
+                  <button className="primary-btn" type="submit" disabled={busy} style={{ marginTop: 18 }}>
+                    Save Delivery Rates
+                  </button>
+                </form>
+              </div>
+
+              <div className="settings-card">
+                <h3>Store Operations & Contact</h3>
+                <p>Manage store opening status and customer helpline contact numbers.</p>
+                <form onSubmit={saveSettings}>
+                  <div className="settings-form-row">
+                    <label>Store Accepting Orders</label>
+                    <select
+                      value={settingsForm.store_open ? 'open' : 'closed'}
+                      onChange={e => setSettingsForm({ ...settingsForm, store_open: e.target.value === 'open' })}
+                    >
+                      <option value="open">Open (Accepting Online Orders)</option>
+                      <option value="closed">Closed for Maintenance / Night</option>
+                    </select>
+                  </div>
+
+                  <div className="settings-form-row">
+                    <label>Store Helpline Phone Number</label>
+                    <input
+                      type="tel"
+                      value={settingsForm.contact_phone}
+                      onChange={e => setSettingsForm({ ...settingsForm, contact_phone: e.target.value })}
+                      placeholder="6380723356"
+                    />
+                  </div>
+
+                  <button className="primary-btn" type="submit" disabled={busy} style={{ marginTop: 18 }}>
+                    Save Store Status
+                  </button>
+                </form>
+              </div>
+            </div>
           )}
         </main>
-        {notice && <div className="toast">{notice}<button onClick={() => setNotice('')}><X size={15} /></button></div>}
+
+        {/* MODAL: Add New Product */}
+        {newProductModal && (
+          <div className="backdrop modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setNewProductModal(false); }}>
+            <div className="modal-luxury">
+              <div className="drawer-head">
+                <div>
+                  <span className="eyebrow">STORE INVENTORY</span>
+                  <h2>Add New Product</h2>
+                  <p>Create a new item in your Supabase catalog.</p>
+                </div>
+                <button className="icon-btn" onClick={() => setNewProductModal(false)}><X size={20} /></button>
+              </div>
+
+              <form onSubmit={addProduct} style={{ marginTop: 18 }}>
+                <label>
+                  Product Name
+                  <input
+                    required
+                    value={newProduct.name}
+                    onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
+                    placeholder="e.g. Fresh Red Snapper Cuts"
+                  />
+                </label>
+
+                <div className="form-two" style={{ marginTop: 12 }}>
+                  <label>
+                    Category
+                    <select
+                      value={newProduct.category}
+                      onChange={e => setNewProduct({ ...newProduct, category: e.target.value })}
+                    >
+                      <option value="fish">Fresh Ocean Fish</option>
+                      <option value="prawns">Prawns & Shellfish</option>
+                      <option value="chicken">Artisanal Chicken</option>
+                      <option value="mutton">Prime Mutton</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Price in ₹ (per unit)
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newProduct.price}
+                      onChange={e => setNewProduct({ ...newProduct, price: e.target.value })}
+                      placeholder="550"
+                    />
+                  </label>
+                </div>
+
+                <label style={{ marginTop: 12 }}>
+                  Description / Chef Cut Notes
+                  <textarea
+                    rows={2}
+                    value={newProduct.description}
+                    onChange={e => setNewProduct({ ...newProduct, description: e.target.value })}
+                    placeholder="e.g. Freshly descaled, clean firm slices perfect for tawa fry"
+                  />
+                </label>
+
+                <label style={{ marginTop: 12 }}>
+                  Image URL
+                  <input
+                    type="url"
+                    value={newProduct.image_url}
+                    onChange={e => setNewProduct({ ...newProduct, image_url: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </label>
+
+                {/* Preset image suggestions for 1-click photo selection */}
+                <div className="preset-images-box">
+                  <span>Quick High-Res Presets:</span>
+                  <div className="preset-pills">
+                    {PRESET_IMAGE_SUGGESTIONS.map(sug => (
+                      <button
+                        type="button"
+                        key={sug.name}
+                        className="preset-pill"
+                        onClick={() => setNewProduct({ ...newProduct, image_url: sug.url, category: sug.category })}
+                      >
+                        {sug.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {newProduct.image_url && (
+                  <div style={{ height: 140, borderRadius: 10, overflow: 'hidden', margin: '12px 0', background: '#02070f' }}>
+                    <img src={newProduct.image_url} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                )}
+
+                <button className="primary-btn full" type="submit" disabled={busy} style={{ marginTop: 16 }}>
+                  {busy ? 'Saving to Supabase...' : 'Save & Publish Product'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: Edit Product Image */}
+        {editingImageProduct && (
+          <div className="backdrop modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setEditingImageProduct(null); }}>
+            <div className="modal-luxury">
+              <div className="drawer-head">
+                <div>
+                  <span className="eyebrow">UPDATE PHOTO</span>
+                  <h2>Change Image for {editingImageProduct.name}</h2>
+                </div>
+                <button className="icon-btn" onClick={() => setEditingImageProduct(null)}><X size={20} /></button>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <label>
+                  Paste New Image URL:
+                  <input
+                    type="url"
+                    defaultValue={editingImageProduct.image_url || editingImageProduct.image}
+                    id="update-img-input"
+                    placeholder="https://images.unsplash.com/..."
+                    style={{ width: '100%', marginTop: 6 }}
+                  />
+                </label>
+
+                <div className="preset-images-box" style={{ marginTop: 14 }}>
+                  <span>Or Pick From Seafood & Meat Presets:</span>
+                  <div className="preset-pills">
+                    {PRESET_IMAGE_SUGGESTIONS.map(sug => (
+                      <button
+                        type="button"
+                        key={sug.name}
+                        className="preset-pill"
+                        onClick={() => {
+                          const el = document.getElementById('update-img-input');
+                          if (el) el.value = sug.url;
+                        }}
+                      >
+                        {sug.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  className="primary-btn full"
+                  style={{ marginTop: 18 }}
+                  onClick={() => {
+                    const val = document.getElementById('update-img-input')?.value;
+                    updateProductImage(editingImageProduct.id, val);
+                  }}
+                >
+                  Save Image URL
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Toast Notification */}
+        {notice && (
+          <div className="toast" role="status">
+            <span>{notice}</span>
+            <button onClick={() => setNotice('')}><X size={15} /></button>
+          </div>
+        )}
       </div>
     );
   }
 
-  // Enhanced storefront experience
+  // ==========================================================================
+  // CUSTOMER STOREFRONT RENDERING
+  // ==========================================================================
   return (
     <div id="home">
       {/* Royal Marquee Announcement Bar */}
       <div className="announcement">
         <div className="announcement-inner">
           <span className="announcement-badge"><CrownIcon /> DAWN CATCH 4:00 AM</span>
-          <span>Imperial Ocean Seafood, Artisanal Chicken & Tender Mutton</span>
+          <span>{settings.banner_offer_text}</span>
           <span className="separator">•</span>
-          <span>Ice-Packed Express Home Delivery</span>
+          <span>Ice-Packed Express Delivery</span>
           <span className="separator">•</span>
           <a href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
-            <MessageCircle size={14} /> VIP WhatsApp Order: +91 {PHONE}
+            <MessageCircle size={14} /> VIP WhatsApp Support: +91 {PHONE}
           </a>
         </div>
       </div>
@@ -498,174 +1633,151 @@ function App() {
 
           <div className="hero-copy">
             <div className="kicker">
-              <span /> PURVEYORS OF IMPERIAL OCEAN CATCH & FRESH MEATS
+              <Sparkles size={16} /> <span>100% CHEMICAL-FREE • DAWN HARBOR PROCUREMENT</span>
             </div>
-            <h1>
-              Freshness Fit For <br />
-              <em>Royalty.</em>
-            </h1>
+            <h1>The King of Fresh Seafood & Meats</h1>
             <p>
-              Direct from pristine coastal harbors at dawn. Descaled and cleaned with surgical care,
-              sub-zero ice insulated, and brought straight to your family's table.
+              Hand-selected from Chennai’s finest coastal fishing harbors at 4:00 AM.
+              Cold-chain packed on crushed ice with zero preservatives, formalin, or compromise.
             </p>
             <div className="hero-actions">
               <a className="primary-btn" href="#shop">
                 Explore Today's Catch <ArrowRight size={17} />
               </a>
-              <a className="text-btn" href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
-                <MessageCircle size={17} /> WhatsApp VIP Order
+              <a className="secondary-btn" href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
+                <MessageCircle size={17} /> VIP Concierge Order
               </a>
             </div>
-            <div className="hero-trust">
-              <span><BadgeCheck size={18} /> 100% Formalin-Free</span>
-              <span><Truck size={18} /> 45-Min Express Delivery</span>
-              <span><Scale size={18} /> Honest Net-Weight Only</span>
+            <div className="hero-stats">
+              <div>
+                <strong>4:00 AM</strong>
+                <span>Harbor landing</span>
+              </div>
+              <div>
+                <strong>0%</strong>
+                <span>Chemicals or formalin</span>
+              </div>
+              <div>
+                <strong>Free</strong>
+                <span>Custom butchery</span>
+              </div>
             </div>
           </div>
 
-          <div className="hero-photo">
-            <img
-              src="/main-banner.jpg"
-              alt="Shas Fresh Mart — Imperial Fresh Seafood Stall"
-              onError={e => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = "https://as1.ftcdn.net/v2/jpg/14/18/67/54/1000_F_1418675416_8r16d2sQvOnYppxpFY9TkLoMZdKrPDpO.jpg";
-              }}
-            />
-            <div className="floating-note">
-              <span><Leaf size={22} /></span>
-              <div>
-                <strong>The Royal Cold-Chain</strong>
-                <small>Harvested 4:00 AM • Zero Chemical Preservatives</small>
+          <div className="hero-visual">
+            <div className="hero-photo">
+              <img
+                src="https://images.unsplash.com/photo-1534043464124-3be32fe000c9?auto=format&fit=crop&w=1200&q=85"
+                alt="Finest ocean catch"
+              />
+              <div className="floating-note">
+                <CrownIcon />
+                <div>
+                  <strong>Imperial Seer Fish (Vanjiram)</strong>
+                  <small>Fresh round cuts arriving daily from harbor</small>
+                </div>
               </div>
-              <BadgeCheck size={24} />
-            </div>
-            <div className="photo-stamp">
-              <span>ROYAL</span>
-              <strong>SEAL</strong>
-              <small>100% PURE CATCH</small>
-            </div>
-          </div>
-
-          <div className="hero-foot">
-            <span>👑 THE GOLD STANDARD IN FRESHNESS</span>
-            <span>DAILY MORNING LANDINGS • DISPATCHING NOW</span>
-          </div>
-        </section>
-
-        {/* 4 Pillars Trust Highlights */}
-        <section className="trust-strip">
-          <div className="trust-grid">
-            <div className="trust-item">
-              <div className="trust-icon"><Flame size={22} /></div>
-              <div>
-                <h4>Dawn Dockside Selection</h4>
-                <p>Selected at 4:00 AM coastal harbor landings</p>
-              </div>
-            </div>
-            <div className="trust-item">
-              <div className="trust-icon"><ShieldCheck size={22} /></div>
-              <div>
-                <h4>Zero Chemical Guarantee</h4>
-                <p>100% chemical & formalin-free pure catch</p>
-              </div>
-            </div>
-            <div className="trust-item">
-              <div className="trust-icon"><Utensils size={22} /></div>
-              <div>
-                <h4>Free Custom Butchery</h4>
-                <p>Curry cut, fry slices & deveining on request</p>
-              </div>
-            </div>
-            <div className="trust-item">
-              <div className="trust-icon"><Zap size={22} /></div>
-              <div>
-                <h4>Sub-Zero Ice Express</h4>
-                <p>Chilled insulated boxes delivered to your door</p>
+              <div className="photo-stamp">
+                <Sparkles size={16} />
+                <strong>TOP 10%</strong>
+                <small>Ocean Catch</small>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Royal Category Showcase */}
+        {/* Categories Section */}
         <section className="category-section" id="categories">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">THE ROYAL SELECTION</span>
-              <h2>Curated Imperial Categories<span className="yellow-dot">.</span></h2>
+              <span className="eyebrow">ROYAL SPECTRUM</span>
+              <h2>Curated Meat & Ocean Categories</h2>
             </div>
-            <p>Every cut inspected for peak freshness, firmness, and natural flavor.</p>
+            <p>Every cut inspected for firm texture, ocean aroma, and culinary excellence.</p>
           </div>
-          <div className="category-grid">
-            {[
-              { id: 'fish', label: 'Fresh Ocean Fish', sub: '10 Handpicked Varieties', count: '10 items', image: seed[0].image },
-              { id: 'prawns', label: 'Prawns & Shellfish', sub: 'Coastal Sweetness', count: '5 items', image: seed[12].image },
-              { id: 'chicken', label: 'Artisanal Chicken', sub: 'RO Cleaned • Tender', count: '2 cuts', image: seed[15].image },
-              { id: 'mutton', label: 'Prime Mountain Mutton', sub: 'Tender Pasture Cuts', count: 'Daily rate', image: seed[17].image }
-            ].map(c => (
-              <button
-                key={c.id}
-                className="category-card"
-                onClick={() => {
-                  setCategory(c.id);
-                  document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <img src={c.image} alt={c.label} onError={e => handleImageError(e, c.id)} />
-                <span className="cat-shade" />
-                <span className="cat-copy">
-                  <small>{c.sub}</small>
-                  <strong>{c.label}</strong>
-                  <span>{c.count}</span>
-                  <i><ArrowRight size={17} /></i>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
 
-        {/* The Royal Market / Catalogue */}
-        <section className="shop-section" id="shop">
-          <div className="section-heading shop-heading">
-            <div>
-              <span className="eyebrow">TODAY'S MORNING HARVEST</span>
-              <h2>Imperial Catch & Prime Cuts<span className="yellow-dot">.</span></h2>
-              <p>Transparent pricing, weighed after cleaning upon request. Add to bag or order directly on WhatsApp.</p>
+          <div className="category-grid">
+            <div className="category-card" onClick={() => { setCategory('fish'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              <img src="https://images.unsplash.com/photo-1510130387422-82bed34b37e9?auto=format&fit=crop&w=900&q=85" alt="Fish" />
+              <div className="category-overlay">
+                <span className="category-tag">🐟 OCEAN HARVEST</span>
+                <strong>Sea & Coastal Fish</strong>
+                <p>Red Snapper, Vanjiram, White Pomfret, Anchovies & Trevally.</p>
+              </div>
             </div>
-            <div className="shop-command-bar">
-              <div className="search-box">
-                <Search size={18} />
-                <input
-                  id="search"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search Vanjiram, Sankara, Prawns, Chicken…"
-                />
-                {search && (
-                  <button className="search-clear-btn" onClick={() => setSearch('')} aria-label="Clear search">
-                    <X size={16} />
-                  </button>
-                )}
+
+            <div className="category-card" onClick={() => { setCategory('prawns'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              <img src="https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=85" alt="Prawns & Shellfish" />
+              <div className="category-overlay">
+                <span className="category-tag">🦐 COASTAL DELICACIES</span>
+                <strong>Prawns & Crab</strong>
+                <p>Jumbo Tiger Prawns, Sea Squid & Fresh Blue Coastal Crabs.</p>
+              </div>
+            </div>
+
+            <div className="category-card" onClick={() => { setCategory('chicken'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              <img src="https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=85" alt="Chicken" />
+              <div className="category-overlay">
+                <span className="category-tag">🍗 ARTISANAL POULTRY</span>
+                <strong>Farm Fresh Chicken</strong>
+                <p>RO-water cleaned tender cuts & chef-marinated specialities.</p>
+              </div>
+            </div>
+
+            <div className="category-card" onClick={() => { setCategory('mutton'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
+              <img src="https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=85" alt="Prime Mutton" />
+              <div className="category-overlay">
+                <span className="category-tag">🥩 MOUNTAIN GRAZED</span>
+                <strong>Prime Mutton</strong>
+                <p>Tender pasture-grazed cuts trimmed with master precision.</p>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="filter-row">
-            {cats.map(c => (
-              <button
-                key={c.id}
-                className={category === c.id ? 'filter-chip active' : 'filter-chip'}
-                onClick={() => setCategory(c.id)}
-              >
-                <span>{c.icon}</span>
-                <span>{c.label}</span>
-              </button>
-            ))}
-            <span>Showing {shown.length} of {products.length} products</span>
+        {/* Product Catalog Section */}
+        <section className="shop-section" id="shop">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">TODAY'S SELECTION</span>
+              <h2>Imperial Market Showcase</h2>
+            </div>
+            <p>Sourced fresh at 4:00 AM • Custom cutting & cleaning is complimentary</p>
+          </div>
+
+          <div className="shop-command-bar">
+            <div className="category-pills">
+              {cats.map(c => (
+                <button
+                  key={c.id}
+                  className={category === c.id ? 'cat-pill active' : 'cat-pill'}
+                  onClick={() => setCategory(c.id)}
+                >
+                  <span className="cat-icon">{c.icon}</span>
+                  <span>{c.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="search-box">
+              <Search size={18} />
+              <input
+                id="search"
+                type="text"
+                placeholder="Search fish, prawns, chicken, recipe cuts..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              {search && (
+                <button onClick={() => setSearch('')} aria-label="Clear search">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="product-grid">
-            {shown.map(p => (
+            {shownProducts.map(p => (
               <article className="product-card" key={p.id}>
                 <div className="product-image">
                   <img
@@ -674,320 +1786,290 @@ function App() {
                     loading="lazy"
                     onError={e => handleImageError(e, p.category)}
                   />
-                  {p.tag && (
-                    <span className={`product-tag ${p.tag.includes('Fresh') ? 'fresh-tag' : ''}`}>
-                      {p.tag}
-                    </span>
-                  )}
-                  {p.price > 0 && (
-                    cart[p.id] ? (
-                      <div className="card-qty-control" aria-label={p.name + ' quantity stepper'}>
-                        <button type="button" onClick={() => qty(p.id, -1)} aria-label={'Remove one ' + p.name}>
-                          <Minus size={14} />
-                        </button>
-                        <strong>{cart[p.id].quantity} kg</strong>
-                        <button type="button" onClick={() => qty(p.id, 1)} aria-label={'Add one ' + p.name}>
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button className="quick-add" onClick={() => add(p)} aria-label={'Quick add ' + p.name}>
-                        <Plus size={20} />
-                      </button>
-                    )
-                  )}
+                  {p.tag && <span className="product-badge">{p.tag}</span>}
+                  <span className="category-chip">{catName(p.category)}</span>
                 </div>
 
                 <div className="product-info">
-                  <span className="product-cat">{catName(p.category)}</span>
                   <h3>{p.name}</h3>
-                  <p>{p.desc || p.description}</p>
-                  <div className="product-chef-tip">
+                  <p>{p.desc}</p>
+                  <div className="chef-tip">
                     <Utensils size={13} />
                     <span>{p.chefTip}</span>
                   </div>
 
                   <div className="product-bottom">
-                    {p.price > 0 ? (
-                      <>
-                        <div>
+                    <div>
+                      {p.price > 0 ? (
+                        <>
+                          <small>Price per {p.unit || 'kg'}</small>
                           <strong>{money(p.price)}</strong>
-                          <span> / kg</span>
-                        </div>
-                        <div className="product-actions">
-                          <button
-                            className={cart[p.id] ? 'add-btn added' : 'add-btn'}
-                            onClick={() => add(p)}
-                          >
-                            {cart[p.id] ? <CheckCircle2 size={15} /> : <Plus size={15} />}
-                            {cart[p.id] ? 'Add more' : 'Add to Bag'}
-                          </button>
-                        </div>
-                      </>
+                        </>
+                      ) : (
+                        <>
+                          <small>Daily Market Price</small>
+                          <strong style={{ fontSize: 16 }}>Enquire Rate</strong>
+                        </>
+                      )}
+                    </div>
+
+                    {p.price > 0 ? (
+                      <button
+                        className="add-btn"
+                        onClick={() => add(p)}
+                        aria-label={`Add ${p.name} to royal bag`}
+                      >
+                        <Plus size={16} />
+                        <span>Add to Bag</span>
+                      </button>
                     ) : (
-                      <>
-                        <div>
-                          <strong>Ask for Today's Rate</strong>
-                        </div>
-                        <button className="wa-ask-btn" onClick={() => quickWa(p)}>
-                          <MessageCircle size={15} /> WhatsApp
-                        </button>
-                      </>
+                      <button
+                        className="wa-ask-btn"
+                        onClick={() => {
+                          const text = encodeURIComponent(`Hi Shas Fresh Mart! I would like to inquire today's market price for ${p.name}.`);
+                          window.open(`https://wa.me/91${PHONE}?text=${text}`, '_blank');
+                        }}
+                      >
+                        <MessageCircle size={15} /> Ask Rate
+                      </button>
                     )}
                   </div>
                 </div>
               </article>
             ))}
           </div>
-
-          {!shown.length && (
-            <div className="empty-state">
-              <ShoppingBag size={38} />
-              <h3>No match found in today's catch</h3>
-              <p>Try searching for Vanjiram, Sankara, Prawns, or clear your filters.</p>
-              <button className="primary-btn" onClick={() => { setSearch(''); setCategory('all'); }}>
-                Reset Catalogue Filters
-              </button>
-            </div>
-          )}
         </section>
 
-        {/* The Royal Standard (Why Discerning Families Choose Shas) */}
+        {/* The Royal Standard / Promise */}
         <section className="promise-section" id="standard">
-          <div className="promise-photo">
-            <img
-              src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=85"
-              alt="Fresh Coastal Fish Harvest"
-              onError={e => handleImageError(e, 'fish')}
-            />
-            <div>
-              <span>THE ROYAL PROMISE</span>
-              <strong>Uncompromising Freshness.<br />Honest Royal Service.</strong>
-            </div>
-          </div>
-
-          <div className="promise-copy">
-            <span className="eyebrow">THE SHAS QUALITY CHARTER</span>
-            <h2>We believe your family deserves royal purity on every plate.</h2>
+          <div className="promise-content">
+            <span className="eyebrow">OUR ROYAL OATH</span>
+            <h2>How Shas Guarantees Unmatched Freshness</h2>
             <p>
-              We bypass intermediate warehouses and commercial cold storage that sit for days.
-              Every order is hand-selected from dawn landings, prepared with surgical hygiene,
-              and delivered fresh on ice.
+              In traditional markets, seafood changes hands multiple times and sits on melting ice for days.
+              At Shas Fresh Mart, our cold-chain process delivers directly from harbor landing to your kitchen within hours.
             </p>
 
-            <div className="promise-item">
-              <span><Award size={22} /></span>
-              <div>
-                <strong>Dockside Selection at 4:00 AM</strong>
-                <p>Only the top 10% premium catch is chosen from local coastal fishermen every dawn.</p>
+            <div className="promise-points">
+              <div className="promise-item">
+                <div className="promise-icon"><Clock size={22} /></div>
+                <div>
+                  <strong>Harbor-Direct Dawn Sourcing</strong>
+                  <p>Procured at 4:00 AM straight from traditional fishing catamarans and deep-sea trawlers.</p>
+                </div>
+              </div>
+
+              <div className="promise-item">
+                <div className="promise-icon"><ShieldCheck size={22} /></div>
+                <div>
+                  <strong>0% Chemical & Formalin Guarantee</strong>
+                  <p>Certified chemical-free. Every batch undergoes strict quality and freshness inspection.</p>
+                </div>
+              </div>
+
+              <div className="promise-item">
+                <div className="promise-icon"><Scale size={22} /></div>
+                <div>
+                  <strong>Complimentary Custom Butchery</strong>
+                  <p>Curry cut, biryani pieces, skin-on or boneless fillets cleaned with purified RO water.</p>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="promise-item">
-              <span><ShieldCheck size={22} /></span>
+          <div className="promise-visual">
+            <div className="promise-photo">
+              <img
+                src="https://images.unsplash.com/photo-1534043464124-3be32fe000c9?auto=format&fit=crop&w=1000&q=85"
+                alt="Imperial Fresh Mart Promise"
+              />
               <div>
-                <strong>100% Chemical & Formalin Free</strong>
-                <p>Preserved purely on natural crushed food-grade ice. Zero chemicals or artificial glazing.</p>
-              </div>
-            </div>
-
-            <div className="promise-item">
-              <span><Scale size={22} /></span>
-              <div>
-                <strong>True Net-Weight Policy</strong>
-                <p>Cleaned, gutted, descaled. You pay only for the cleaned net weight — zero waste charging.</p>
-              </div>
-            </div>
-
-            <div className="promise-item">
-              <span><Truck size={22} /></span>
-              <div>
-                <strong>Sub-Zero Insulated Cold Chain</strong>
-                <p>Packed in food-grade insulated boxes that keep seafood under 4°C right to your kitchen door.</p>
+                <strong>Ice-Chilled Transit</strong>
+                <small>Maintained at 0°C–4°C in food-grade thermal containers</small>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Chef's Culinary Guide / Cooking Pairings */}
+        {/* Chef Culinary Pairing Guide */}
         <section className="culinary-section" id="culinary">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">CHEF'S INSPIRATION</span>
-              <h2>What Are You Cooking Today?<span className="yellow-dot">.</span></h2>
+              <span className="eyebrow">CULINARY EXCELLENCE</span>
+              <h2>Chef's Preparation Guide</h2>
             </div>
-            <p>Choose your planned recipe for our master butcher's recommended catch.</p>
+            <p>Pick the right cut for your recipe to achieve maximum flavor and succulence.</p>
           </div>
 
-          <div className="culinary-nav">
+          <div className="recipe-selector">
             {RECIPES.map(r => (
               <button
                 key={r.id}
-                className={activeRecipe === r.id ? 'culinary-tab active' : 'culinary-tab'}
+                className={activeRecipe === r.id ? 'recipe-tab active' : 'recipe-tab'}
                 onClick={() => setActiveRecipe(r.id)}
               >
-                <Utensils size={15} />
-                <span>{r.title.split('&')[0]}</span>
+                {r.title}
               </button>
             ))}
           </div>
 
           {(() => {
-            const currentRecipe = RECIPES.find(r => r.id === activeRecipe) || RECIPES[0];
-            const matchingProducts = products.filter(p => currentRecipe.items.includes(p.id));
-
+            const active = RECIPES.find(r => r.id === activeRecipe) || RECIPES[0];
             return (
               <div className="culinary-card">
                 <div className="culinary-info">
-                  <span className="culinary-badge">{currentRecipe.tag}</span>
-                  <h3>{currentRecipe.title}</h3>
-                  <p>{currentRecipe.desc}</p>
-                  <a className="primary-btn" href="#shop" onClick={() => setCategory('all')}>
-                    Order Recommended Cuts <ArrowRight size={16} />
-                  </a>
-                </div>
-
-                <div className="culinary-recs">
-                  {matchingProducts.map(p => (
-                    <div className="rec-item" key={p.id} onClick={() => add(p)}>
-                      <img src={p.image} alt={p.name} onError={e => handleImageError(e, p.category)} />
-                      <strong>{p.name}</strong>
-                      <span>{p.price > 0 ? money(p.price) + '/kg' : 'Market Price'}</span>
-                      <small style={{ color: '#10b981', display: 'block', fontSize: 10, marginTop: 4 }}>
-                        + Add to Bag
-                      </small>
-                    </div>
-                  ))}
+                  <span className="culinary-badge">{active.tag}</span>
+                  <h3>{active.title}</h3>
+                  <p>{active.desc}</p>
+                  <small>Recommended Cuts Available in Shop:</small>
+                  <div className="culinary-items">
+                    {active.items.map(itemId => {
+                      const item = products.find(p => p.id === itemId);
+                      if (!item) return null;
+                      return (
+                        <div key={itemId} className="culinary-chip" onClick={() => add(item)}>
+                          <span>{item.name}</span>
+                          <b>{money(item.price)}/kg</b>
+                          <Plus size={14} />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             );
           })()}
         </section>
 
-        {/* Customer Praise & Royal Testimonials */}
+        {/* Customer Testimonials */}
         <section className="testimonials-section" id="reviews">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">VERIFIED PRAISE</span>
-              <h2>Loved by 2,500+ Discerning Families<span className="yellow-dot">.</span></h2>
+              <span className="eyebrow">PATRON APPRECIATION</span>
+              <h2>Praise from Discerning Kitchens</h2>
             </div>
-            <p>Here is why home chefs and families rate Shas Fresh Mart 4.9 out of 5 stars.</p>
+            <p>Trusted by seafood connoisseurs, families, and chefs across Chennai.</p>
           </div>
 
           <div className="testimonials-grid">
             {TESTIMONIALS.map((t, idx) => (
-              <div className="testimonial-card" key={idx}>
-                <div className="stars-row">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="#f5d061" />)}
+              <article className="testimonial-card" key={idx}>
+                <div className="stars">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={15} fill="#d4af37" color="#d4af37" />
+                  ))}
                 </div>
                 <p>"{t.text}"</p>
-                <div className="testimonial-footer">
-                  <div className="testimonial-user">
+                <div className="testimonial-foot">
+                  <div>
                     <strong>{t.name}</strong>
-                    <span>{t.location} • {t.item}</span>
+                    <span>{t.location}</span>
                   </div>
-                  <span className="verified-tag">
-                    <CheckCircle2 size={13} /> Verified
-                  </span>
+                  <small>{t.item}</small>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </section>
 
-        {/* VIP Express Delivery Banner */}
-        <section className="delivery-banner" id="delivery">
-          <div className="delivery-symbol">
-            <Truck size={30} />
-          </div>
-          <div>
-            <span className="eyebrow">CHILLED TO PERFECTION</span>
-            <h2>Direct Express Delivery Straight to Your Palace.</h2>
-            <p>
-              Order online in seconds or message our master fishmongers directly on WhatsApp.
-              We pack every order with food-grade ice and dispatch immediately.
-            </p>
-          </div>
-          <a className="primary-btn light" href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
-            <MessageCircle size={18} /> Chat with Shop <ArrowRight size={17} />
-          </a>
-        </section>
-
-        {/* Interactive FAQ Section */}
+        {/* FAQ Accordion */}
         <section className="faq-section" id="faq">
-          <div className="faq-heading">
-            <span className="eyebrow">FREQUENTLY ASKED QUESTIONS</span>
-            <h2>Everything You Need to Know<span className="yellow-dot">.</span></h2>
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">COMMON INQUIRIES</span>
+              <h2>Frequently Asked Questions</h2>
+            </div>
+            <p>Everything you need to know about our sourcing, delivery, and butchery.</p>
           </div>
+
           <div className="faq-list">
-            {FAQS.map((faq, i) => (
+            {FAQS.map((faq, idx) => (
               <div
-                key={i}
-                className={activeFaq === i ? 'faq-item open' : 'faq-item'}
+                className={activeFaq === idx ? 'faq-item open' : 'faq-item'}
+                key={idx}
+                onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
               >
-                <button
-                  className="faq-question"
-                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                  aria-expanded={activeFaq === i}
-                >
+                <div className="faq-q">
                   <span>{faq.q}</span>
-                  <ChevronDown size={19} />
-                </button>
-                {activeFaq === i && (
-                  <div className="faq-answer">
-                    <p>{faq.a}</p>
-                  </div>
-                )}
+                  <ChevronDown size={18} />
+                </div>
+                {activeFaq === idx && <p className="faq-a">{faq.a}</p>}
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Royal Delivery Banner */}
+        <section className="delivery-banner">
+          <div>
+            <span className="eyebrow">DIRECT TO YOUR DOORSTEP</span>
+            <h2>Experience Imperial Seafood at Home</h2>
+            <p>Delivered on crushed ice in food-grade thermal containers. Ready to cook or marinate.</p>
+          </div>
+          <button className="primary-btn" onClick={() => { setCartOpen(true); }}>
+            Open Shopping Bag ({count}) <ArrowRight size={17} />
+          </button>
         </section>
       </main>
 
-      {/* Royal Footer */}
-      <footer className="footer">
+      {/* Footer */}
+      <footer className="site-footer">
         <div className="footer-main">
-          <div>
+          <div className="footer-brand">
             <Logo />
             <p>
-              Purveyors of imperial ocean seafood, artisanal country chicken, and tender mountain mutton.
-              Cleaned with surgical hygiene, delivered ice-chilled to your kitchen.
+              Chennai’s premier direct-from-harbor seafood and artisanal meat purveyor.
+              Supplying fine households with pristine ocean harvests every morning.
             </p>
+            <div className="footer-contact-info">
+              <p><MapPin size={15} /> Chennai, Tamil Nadu • Fresh Coastal Harbor Dispatch</p>
+              <p><Phone size={15} /> Direct Helpline: +91 {PHONE}</p>
+            </div>
           </div>
+
           <div>
-            <strong>Quick Navigation</strong>
-            <a href="#shop">Imperial Catch</a>
-            <a href="#categories">Product Categories</a>
-            <a href="#standard">Our Royal Charter</a>
-            <a href="#culinary">Chef's Recipe Guide</a>
-            <a href="#reviews">Customer Reviews</a>
-            <a href="#faq">Frequently Asked</a>
+            <h4>Cuts & Catches</h4>
+            <ul>
+              <li><a href="#shop" onClick={() => setCategory('fish')}>Red Snapper (Sankara)</a></li>
+              <li><a href="#shop" onClick={() => setCategory('fish')}>King Seer Fish (Vanjiram)</a></li>
+              <li><a href="#shop" onClick={() => setCategory('prawns')}>Jumbo Tiger Prawns</a></li>
+              <li><a href="#shop" onClick={() => setCategory('chicken')}>Farm Fresh Chicken</a></li>
+              <li><a href="#shop" onClick={() => setCategory('mutton')}>Prime Mountain Mutton</a></li>
+            </ul>
           </div>
+
           <div>
-            <strong>Order & Enquiries</strong>
-            <a href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
-              <MessageCircle size={15} /> WhatsApp: +91 {PHONE}
-            </a>
-            <a href={`tel:+91${PHONE}`}>
-              <Phone size={15} /> Call: +91 {PHONE}
-            </a>
-            <span>Operating Hours: 6:30 AM – 8:30 PM (7 Days)</span>
+            <h4>The Royal Standard</h4>
+            <ul>
+              <li><a href="#standard">Harbor Sourcing at 4:00 AM</a></li>
+              <li><a href="#standard">100% Formalin-Free Oath</a></li>
+              <li><a href="#standard">Complimentary Custom Cuts</a></li>
+              <li><a href="#culinary">Chef's Recipe Guide</a></li>
+              <li><a href="#faq">Frequently Asked Questions</a></li>
+            </ul>
           </div>
+
           <div className="footer-promise">
-            <ShieldCheck size={28} />
-            <span>100% Purity &<br />Freshness Guarantee</span>
+            <h4>Imperial Assurance</h4>
+            <div className="assurance-badge">
+              <ShieldCheck size={28} />
+              <div>
+                <strong>Zero Preservatives</strong>
+                <p>100% natural, pristine ocean fish packed on fresh ice.</p>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Shas Fresh Mart. All rights reserved. Imperial Quality Seafood & Meats.</span>
-          <button onClick={() => { history.pushState({}, '', '/admin'); setAdmin(true); }}>
+          <button onClick={() => { window.history.pushState({}, '', '/admin'); setAdmin(true); }}>
             Store Workspace Login
           </button>
         </div>
       </footer>
 
-      {/* Royal Cart Drawer */}
+      {/* Shopping Bag Drawer */}
       {cartOpen && (
         <div className="backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setCartOpen(false); }}>
           <aside className="cart-drawer">
@@ -1004,19 +2086,24 @@ function App() {
 
             {items.length ? (
               <>
+                {/* Free Delivery Perk Bar */}
                 <div className="delivery-perk-bar">
                   <div className="perk-text">
-                    {subtotal >= 1000 ? (
-                      <span>🎉 Unlocked: Complimentary Express Ice Packing & Priority Delivery!</span>
+                    {subtotal >= (settings.free_delivery_threshold || 500) ? (
+                      <span>🎉 Unlocked: Complimentary Express Ice Packing & FREE Delivery!</span>
                     ) : (
-                      <span>Add {money(1000 - subtotal)} more for VIP Priority Cold Packaging</span>
+                      <span>Add {money((settings.free_delivery_threshold || 500) - subtotal)} more for FREE Express Delivery!</span>
                     )}
                   </div>
                   <div className="perk-progress">
-                    <div className="perk-fill" style={{ width: `${Math.min(100, (subtotal / 1000) * 100)}%` }} />
+                    <div
+                      className="perk-fill"
+                      style={{ width: `${Math.min(100, (subtotal / (settings.free_delivery_threshold || 500)) * 100)}%` }}
+                    />
                   </div>
                 </div>
 
+                {/* Cart Items List */}
                 <div className="cart-lines">
                   {items.map(i => (
                     <div className="cart-line" key={i.id}>
@@ -1036,17 +2123,55 @@ function App() {
                   ))}
                 </div>
 
+                {/* Promo Code Apply */}
+                {settings.offer_enabled && (
+                  <div>
+                    {!appliedPromo ? (
+                      <form className="coupon-row" onSubmit={handleApplyPromo}>
+                        <input
+                          type="text"
+                          placeholder={`Enter Promo Code (e.g. ${settings.offer_code || 'FRESH10'})`}
+                          value={promoInput}
+                          onChange={e => setPromoInput(e.target.value)}
+                        />
+                        <button type="submit" className="coupon-btn">Apply</button>
+                      </form>
+                    ) : (
+                      <div className="coupon-applied">
+                        <span>🏷️ Promo Code <strong>{appliedPromo}</strong> applied (-{settings.offer_discount_percent}%)</span>
+                        <button type="button" className="coupon-remove" onClick={() => setAppliedPromo(null)}>Remove</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Cart Summary */}
                 <div className="cart-summary">
                   <div>
-                    <span>Estimated Subtotal</span>
+                    <span>Items Subtotal</span>
                     <strong>{money(subtotal)}</strong>
                   </div>
-                  <small>
-                    Delivery charge and final net weight are confirmed transparently by the store.
-                  </small>
+                  <div>
+                    <span>Express Delivery</span>
+                    <strong>
+                      {deliveryCharge === 0 ? <span style={{ color: '#34d399' }}>FREE</span> : money(deliveryCharge)}
+                    </strong>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div style={{ color: '#34d399' }}>
+                      <span>Discount ({settings.offer_discount_percent}%)</span>
+                      <strong>-{money(discountAmount)}</strong>
+                    </div>
+                  )}
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 10, marginTop: 4 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700 }}>Total Payable</span>
+                    <strong style={{ fontSize: 20, color: 'var(--gold-bright)' }}>{money(grandTotal)}</strong>
+                  </div>
+
                   <button
                     className="primary-btn full"
                     onClick={() => { setCartOpen(false); setCheckout(true); }}
+                    style={{ marginTop: 16 }}
                   >
                     Proceed to Delivery Details <ArrowRight size={17} />
                   </button>
@@ -1075,13 +2200,13 @@ function App() {
         </div>
       )}
 
-      {/* Royal Checkout Modal */}
+      {/* Customer Delivery Checkout Modal */}
       {checkout && (
         <div className="backdrop modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setCheckout(false); }}>
           <section className="checkout-modal">
             <div className="drawer-head">
               <div>
-                <span className="eyebrow">FINAL STEP</span>
+                <span className="eyebrow">DIRECT ORDER DISPATCH</span>
                 <h2>Delivery & Custom Butchery Details</h2>
                 <p>Tell our master butchers where to deliver your ice-chilled order.</p>
               </div>
@@ -1090,7 +2215,7 @@ function App() {
               </button>
             </div>
 
-            <form className="checkout-form" onSubmit={place}>
+            <form className="checkout-form" onSubmit={placeCustomerOrder}>
               <label>
                 Full Name
                 <input
@@ -1116,6 +2241,7 @@ function App() {
                 <label>
                   Locality / Landmark
                   <input
+                    required
                     value={customer.area}
                     onChange={e => setCustomer({ ...customer, area: e.target.value })}
                     placeholder="e.g. Near Velachery Bus Terminus"
@@ -1130,7 +2256,7 @@ function App() {
                   rows={3}
                   value={customer.address}
                   onChange={e => setCustomer({ ...customer, address: e.target.value })}
-                  placeholder="Apartment name, door number, street..."
+                  placeholder="Apartment name, flat/door number, street name..."
                 />
               </label>
 
@@ -1140,36 +2266,99 @@ function App() {
                   rows={2}
                   value={customer.notes}
                   onChange={e => setCustomer({ ...customer, notes: e.target.value })}
-                  placeholder="e.g. Vanjiram thin fry slices, Sankara curry cuts, Prawns deveined..."
+                  placeholder="e.g. Vanjiram thin fry slices, Sankara curry cuts, Prawns deveined & deshelled..."
                 />
               </label>
 
+              {/* Bill Details Breakdown */}
               <div className="checkout-total">
-                <span>
-                  Order Subtotal <small>{count} kg in bag</small>
-                </span>
-                <strong>{money(subtotal)}</strong>
+                <div style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 13, color: 'var(--text-muted)' }}>
+                    <span>Items Subtotal ({count} kg)</span>
+                    <span>{money(subtotal)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 13, color: 'var(--text-muted)' }}>
+                    <span>Express Cold-Chain Delivery</span>
+                    <span>{deliveryCharge === 0 ? <strong style={{ color: '#34d399' }}>FREE</strong> : money(deliveryCharge)}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 13, color: '#34d399' }}>
+                      <span>Discount ({appliedPromo})</span>
+                      <span>-{money(discountAmount)}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 0', marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: 16 }}>
+                    <span style={{ fontWeight: 700 }}>Total Payable</span>
+                    <strong style={{ color: 'var(--gold-bright)' }}>{money(grandTotal)}</strong>
+                  </div>
+                  <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                    💵 Payment Mode: Cash on Delivery or UPI upon arrival.
+                  </small>
+                </div>
               </div>
 
-              {!supabaseConfigured && (
-                <p className="form-hint">
-                  👑 Online order connects directly with Shas Fresh Mart WhatsApp for instant dispatch.
-                </p>
-              )}
-
               <button className="primary-btn full" type="submit" disabled={busy}>
-                {busy ? 'Dispatching Request…' : (
+                {busy ? (
                   <>
-                    Confirm & Send to WhatsApp <ArrowRight size={17} />
+                    <RefreshCw className="spin" size={17} /> Placing Order in Kitchen Queue...
+                  </>
+                ) : (
+                  <>
+                    Confirm & Place Order <ArrowRight size={17} />
                   </>
                 )}
               </button>
 
               <p className="checkout-legal">
-                <ShieldCheck size={14} /> 100% Secure & Private • Delivered In Insulated Food-Grade Boxes
+                <ShieldCheck size={14} /> 100% Secure & Private • Hand-Delivered In Insulated Food-Grade Boxes
               </p>
             </form>
           </section>
+        </div>
+      )}
+
+      {/* MODAL: Customer Order Confirmation (Instant feedback, NO forced WhatsApp redirect) */}
+      {confirmedOrder && (
+        <div className="backdrop modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setConfirmedOrder(null); }}>
+          <div className="order-success-card">
+            <div className="success-celebrate-crest">
+              <CheckCircle2 size={44} />
+            </div>
+            <div className="order-ref-pill">
+              ORDER REFERENCE: #{confirmedOrder.order_id.slice(0, 8).toUpperCase()}
+            </div>
+            <h2>Order Placed Successfully!</h2>
+            <p>
+              Thank you, <strong>{confirmedOrder.customer.name}</strong>! Your order has been placed directly into our
+              Store Admin workspace queue. Our master butchers are preparing your fresh cuts.
+            </p>
+
+            <div className="success-details-box">
+              <p><span>Customer Phone:</span> <strong>{confirmedOrder.customer.phone}</strong></p>
+              <p><span>Delivery Address:</span> <strong>{confirmedOrder.customer.address}, {confirmedOrder.customer.area}</strong></p>
+              <p><span>Total Payable:</span> <strong>{money(confirmedOrder.total)} (Cash / UPI on Delivery)</strong></p>
+              <p><span>Estimated Dispatch:</span> <strong>Within 45–60 Minutes</strong></p>
+            </div>
+
+            <div className="success-actions">
+              <button
+                className="primary-btn full"
+                onClick={() => setConfirmedOrder(null)}
+              >
+                Back to Storefront
+              </button>
+
+              <a
+                className="secondary-btn center"
+                href={`https://wa.me/91${PHONE}?text=${encodeURIComponent(`Hi Shas Fresh Mart, I have placed order #${confirmedOrder.order_id.slice(0, 8).toUpperCase()} for ${money(confirmedOrder.total)}. Please confirm dispatch!`)}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ textAlign: 'center', justifyContent: 'center' }}
+              >
+                <MessageCircle size={16} /> Optional: Chat with Store on WhatsApp
+              </a>
+            </div>
+          </div>
         </div>
       )}
 
