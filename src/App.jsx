@@ -5,13 +5,13 @@ const PHONE='6380723356';
 const cats=[{id:'all',label:'All products',icon:'✦'},{id:'fish',label:'Fresh fish',icon:'🐟'},{id:'prawns',label:'Prawns & crab',icon:'🦐'},{id:'chicken',label:'Chicken',icon:'🍗'},{id:'mutton',label:'Mutton',icon:'🥩'}];
 const seed=[
 ['sankara-big','Big Sankara','fish',500,'Freshly sourced red snapper','Popular','https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png'],
-['vanjiram','Vanjiram','fish',1200,'Premium seer fish cuts','Premium','https://vijayafishmart.com/wp-content/uploads/2023/06/vanjaram.png'],
+['vanjiram','Vanjiram','fish',1200,'Premium seer fish cuts','Premium','https://commons.wikimedia.org/wiki/Special:FilePath/Vanjiram_fish.JPG?width=1200'],
 ['sankara-medium','Medium Sankara','fish',430,'A family favourite','','https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png'],
 ['sankara-small','Small Sankara','fish',350,'Fresh catch, great value','','https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png'],
 ['paara-medium','Medium Paara','fish',450,'Cleaned on request','','https://production.ruralindiaonline.org/uploads/04a_PAL_4326_NR_0c80371e5c.jpg'],
 ['nethili','Nethili','fish',450,'Perfect for a crispy fry','','https://fresheatstrial.myshopify.com/cdn/shop/products/Anchovies_4122029675_grande.jpeg?v=1465875143'],
 ['seela-small','Small Seela','fish',350,'Fresh sea fish','','https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Barracuda_in_Salem_fish_market.jpg/1280px-Barracuda_in_Salem_fish_market.jpg'],
-['seela-medium','Medium Seela','fish',500,'Carefully selected','','https://fishcut.in/wp-content/uploads/2025/03/XXXL-1.jpg'],
+['seela-medium','Medium Seela','fish',500,'Carefully selected','','https://commons.wikimedia.org/wiki/Special:FilePath/Barracuda_in_Salem_fish_market.jpg?width=1200'],
 ['sura','Sura','fish',450,'Great for curry and fry','','https://dukaan.b-cdn.net/1000x1000/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/107775-cbyzjflxch-1544446102.jpg'],
 ['vaval','Vaval','fish',800,'Rich, delicate flavour','','https://dukaan.b-cdn.net/700x700/webp/591197/9886c76f-2a7c-4145-8dfe-fb6bc17c45e7.png'],
 ['kadama-medium','Medium Kadama','prawns',480,'Fresh squid','','https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=90'],
