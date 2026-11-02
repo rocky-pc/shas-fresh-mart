@@ -13,21 +13,21 @@ import { supabase, supabaseConfigured } from './lib/supabase';
 const DEFAULT_PHONE = '6380723356';
 
 const FALLBACK_IMAGES = {
-  fish: 'https://images.unsplash.com/photo-1534043464124-3be32fe000c9?auto=format&fit=crop&w=900&q=85',
-  prawns: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=85',
+  fish: 'https://commons.wikimedia.org/wiki/Special:FilePath/Sankara_fish_1.JPG?width=1200',
+  prawns: 'https://commons.wikimedia.org/wiki/Special:FilePath/Big_size_Prawns.JPG?width=1200',
   chicken: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=85',
   mutton: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=85',
-  default: 'https://images.unsplash.com/photo-1534043464124-3be32fe000c9?auto=format&fit=crop&w=900&q=85'
+  default: 'https://commons.wikimedia.org/wiki/Special:FilePath/Sankara_fish_1.JPG?width=1200'
 };
 
 const PRESET_IMAGE_SUGGESTIONS = [
-  { name: 'Red Snapper (Sankara)', category: 'fish', url: 'https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png' },
+  { name: 'Red Snapper (Sankara)', category: 'fish', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Sankara_fish_1.JPG?width=1200' },
   { name: 'King Seer Fish (Vanjiram)', category: 'fish', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Vanjiram_fish.JPG?width=1200' },
-  { name: 'Silver Anchovies (Nethili)', category: 'fish', url: 'https://fresheatstrial.myshopify.com/cdn/shop/products/Anchovies_4122029675_grande.jpeg?v=1465875143' },
-  { name: 'White Pomfret (Vaval)', category: 'fish', url: 'https://dukaan.b-cdn.net/700x700/webp/591197/9886c76f-2a7c-4145-8dfe-fb6bc17c45e7.png' },
-  { name: 'Jumbo Tiger Prawns', category: 'prawns', url: 'https://static.freshtohome.com/media/catalog/product/cache/1/image/18ae109e34f485bd0b0c075abec96b2e/w/h/whiteprawn-small-whiteprawnswhole_3_2.jpg' },
-  { name: 'Fresh Sea Squid (Kadama)', category: 'prawns', url: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=90' },
-  { name: 'Blue Coastal Crab', category: 'prawns', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Fresh_Crab.jpg?width=1200' },
+  { name: 'Silver Anchovies (Nethili)', category: 'fish', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Nethili_karuvaadu.JPG?width=1200' },
+  { name: 'White Pomfret (Vaval)', category: 'fish', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Vouvaal_fish.JPG?width=1200' },
+  { name: 'Jumbo Tiger Prawns', category: 'prawns', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Big_size_Prawns.JPG?width=1200' },
+  { name: 'Fresh Sea Squid (Kadama)', category: 'prawns', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Squid.jpg?width=1200' },
+  { name: 'Blue Coastal Crab', category: 'prawns', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Sea_Crab_In_Chennai.jpeg?width=1200' },
   { name: 'Farm Fresh Chicken', category: 'chicken', url: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=90' },
   { name: 'Prime Mountain Mutton', category: 'mutton', url: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=90' }
 ];
@@ -41,21 +41,21 @@ const cats = [
 ];
 
 const seed = [
-  ['sankara-big', 'Big Sankara (Red Snapper)', 'fish', 500, 'Freshly sourced coastal red snapper — sweet, firm, succulent flakes.', '👑 Bestseller', 'https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png', 'Ideal for spicy tamarind fish curry & pan bake'],
+  ['sankara-big', 'Big Sankara (Red Snapper)', 'fish', 500, 'Freshly sourced coastal red snapper — sweet, firm, succulent flakes.', '👑 Bestseller', 'https://commons.wikimedia.org/wiki/Special:FilePath/Sankara_fish_1.JPG?width=1200', 'Ideal for spicy tamarind fish curry & pan bake'],
   ['vanjiram', 'Vanjiram (King Seer Fish)', 'fish', 1200, 'The undisputed ocean king — boneless round cuts, unmatched royal taste.', '💎 Royal Catch', 'https://commons.wikimedia.org/wiki/Special:FilePath/Vanjiram_fish.JPG?width=1200', 'Top choice for classic spicy tawa fry & fish biryani'],
-  ['sankara-medium', 'Medium Sankara', 'fish', 430, 'Tender family-size red snapper — cleaned and descaled with perfection.', '✨ Fresh Today', 'https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png', 'The favorite for daily comforting Meen Kulambu'],
-  ['sankara-small', 'Small Sankara', 'fish', 350, 'Sweet morning catch, full of coastal sweetness and delicate tenderness.', 'Value Pick', 'https://dukaan.b-cdn.net/700x700/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/1607927836441.png', 'Crisps delightfully for shallow pan fry'],
-  ['paara-medium', 'Medium Paara (Trevally)', 'fish', 450, 'Firm-textured sea trevally — expertly descaled, clean white meat.', '🌊 Dawn Catch', 'https://production.ruralindiaonline.org/uploads/04a_PAL_4326_NR_0c80371e5c.jpg', 'Absorbs rich masala for spicy tawa roast'],
-  ['nethili', 'Nethili (Silver Anchovies)', 'fish', 450, 'Gleaming ocean anchovies — head trimmed and gutted on request.', '🔥 Popular', 'https://fresheatstrial.myshopify.com/cdn/shop/products/Anchovies_4122029675_grande.jpeg?v=1465875143', 'Unbeatable for crunchy, golden lemon-pepper fry'],
+  ['sankara-medium', 'Medium Sankara', 'fish', 430, 'Tender family-size red snapper — cleaned and descaled with perfection.', '✨ Fresh Today', 'https://commons.wikimedia.org/wiki/Special:FilePath/Sankara_fish_2.JPG?width=1200', 'The favorite for daily comforting Meen Kulambu'],
+  ['sankara-small', 'Small Sankara', 'fish', 350, 'Sweet morning catch, full of coastal sweetness and delicate tenderness.', 'Value Pick', 'https://commons.wikimedia.org/wiki/Special:FilePath/Sankara_fish_front.JPG?width=1200', 'Crisps delightfully for shallow pan fry'],
+  ['paara-medium', 'Medium Paara (Trevally)', 'fish', 450, 'Firm-textured sea trevally — expertly descaled, clean white meat.', '🌊 Dawn Catch', 'https://commons.wikimedia.org/wiki/Special:FilePath/Big_Jilebi_fishes.JPG?width=1200', 'Absorbs rich masala for spicy tawa roast'],
+  ['nethili', 'Nethili (Silver Anchovies)', 'fish', 450, 'Gleaming ocean anchovies — head trimmed and gutted on request.', '🔥 Popular', 'https://commons.wikimedia.org/wiki/Special:FilePath/Nethili_karuvaadu.JPG?width=1200', 'Unbeatable for crunchy, golden lemon-pepper fry'],
   ['seela-small', 'Small Seela (Barracuda)', 'fish', 350, 'Wild caught sea barracuda with tender white flakes and mild sweet notes.', 'Daily Fresh', 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Barracuda_in_Salem_fish_market.jpg/1280px-Barracuda_in_Salem_fish_market.jpg', 'Superb in rustic village-style fish gravy'],
   ['seela-medium', 'Medium Seela', 'fish', 500, 'Carefully selected prime sea barracuda steaks — thick and meaty.', 'Prime Cut', 'https://commons.wikimedia.org/wiki/Special:FilePath/Barracuda_in_Salem_fish_market.jpg?width=1200', 'Perfect for both curry and shallow fry'],
-  ['sura', 'Sura (Baby Shark)', 'fish', 450, 'Pure boneless delicacy — rich in protein, cleaned and cubed.', 'Healthy Choice', 'https://dukaan.b-cdn.net/1000x1000/webp/2360978/ac487292-5509-42e5-a921-8486b4e00e03/107775-cbyzjflxch-1544446102.jpg', 'Legendary for authentic Sura Puttu & pepper gravy'],
-  ['vaval', 'Vaval (White Pomfret)', 'fish', 800, 'Silky, delicate coastal white pomfret with exquisite melt-in-mouth texture.', '👑 Premium', 'https://dukaan.b-cdn.net/700x700/webp/591197/9886c76f-2a7c-4145-8dfe-fb6bc17c45e7.png', 'World-class for tandoori & whole shallow pan fry'],
-  ['kadama-medium', 'Medium Kadama (Squid)', 'prawns', 480, 'Freshly harvested sea squid — thoroughly cleaned, ink-free white tubes.', 'Ocean Delicacy', 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=90', 'Great for calamari rings and spicy dry roast'],
-  ['kadama-big', 'Big Jumbo Kadama', 'prawns', 600, 'Thick, succulent calamari rings bursting with natural sea sweetness.', 'Chef Choice', 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=90', 'Delicious for spicy pepper masala stuffing'],
-  ['prawn-medium', 'Medium Coastal Prawns', 'prawns', 550, 'Juicy coastal prawns — sweet, tender, deveined and deshelled upon wish.', '👑 Bestseller', 'https://kmamarineinternational.com/images/products/whole-shrimp.jpg', 'Classic for prawn thokku, biryani & golden fry'],
-  ['prawn-big', 'Big Jumbo Tiger Prawns', 'prawns', 680, 'Imperial-sized sea prawns — meaty, sweet bite worthy of a royal feast.', '💎 Royal Feast', 'https://static.freshtohome.com/media/catalog/product/cache/1/image/18ae109e34f485bd0b0c075abec96b2e/w/h/whiteprawn-small-whiteprawnswhole_3_2.jpg', 'Masterpiece for butter garlic roast & royal pulao'],
-  ['crab-medium', 'Medium Coastal Blue Crab', 'prawns', 600, 'Wild blue ocean crab with sweet succulent meat and full intact claws.', 'Seafood Special', 'https://commons.wikimedia.org/wiki/Special:FilePath/Fresh_Crab.jpg?width=1200', 'The holy grail for fiery Chettinad crab curry'],
+  ['sura', 'Sura (Baby Shark)', 'fish', 450, 'Pure boneless delicacy — rich in protein, cleaned and cubed.', 'Healthy Choice', 'https://commons.wikimedia.org/wiki/Special:FilePath/Sharks_for_sale.JPG?width=1200', 'Legendary for authentic Sura Puttu & pepper gravy'],
+  ['vaval', 'Vaval (White Pomfret)', 'fish', 800, 'Silky, delicate coastal white pomfret with exquisite melt-in-mouth texture.', '👑 Premium', 'https://commons.wikimedia.org/wiki/Special:FilePath/Vouvaal_fish.JPG?width=1200', 'World-class for tandoori & whole shallow pan fry'],
+  ['kadama-medium', 'Medium Kadama (Squid)', 'prawns', 480, 'Freshly harvested sea squid — thoroughly cleaned, ink-free white tubes.', 'Ocean Delicacy', 'https://commons.wikimedia.org/wiki/Special:FilePath/Squid.jpg?width=1200', 'Great for calamari rings and spicy dry roast'],
+  ['kadama-big', 'Big Jumbo Kadama', 'prawns', 600, 'Thick, succulent calamari rings bursting with natural sea sweetness.', 'Chef Choice', 'https://commons.wikimedia.org/wiki/Special:FilePath/Squid.jpg?width=1200', 'Delicious for spicy pepper masala stuffing'],
+  ['prawn-medium', 'Medium Coastal Prawns', 'prawns', 550, 'Juicy coastal prawns — sweet, tender, deveined and deshelled upon wish.', '👑 Bestseller', 'https://commons.wikimedia.org/wiki/Special:FilePath/Prawns_in_plate.JPG?width=1200', 'Classic for prawn thokku, biryani & golden fry'],
+  ['prawn-big', 'Big Jumbo Tiger Prawns', 'prawns', 680, 'Imperial-sized sea prawns — meaty, sweet bite worthy of a royal feast.', '💎 Royal Feast', 'https://commons.wikimedia.org/wiki/Special:FilePath/Big_size_Prawns.JPG?width=1200', 'Masterpiece for butter garlic roast & royal pulao'],
+  ['crab-medium', 'Medium Coastal Blue Crab', 'prawns', 600, 'Wild blue ocean crab with sweet succulent meat and full intact claws.', 'Seafood Special', 'https://commons.wikimedia.org/wiki/Special:FilePath/Sea_Crab_In_Chennai.jpeg?width=1200', 'The holy grail for fiery Chettinad crab curry'],
   ['chicken', 'Farm Fresh Chicken', 'chicken', 300, 'Tender grain-fed cuts — cleaned with purified RO water, zero antibiotics.', '✨ Fresh Daily', 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=90', 'Curry cut, biryani cut or boneless breast on request'],
   ['marinated-chicken', 'Royal Marinated Chicken', 'chicken', 450, 'Dressed cuts infused with freshly roasted coastal spices — ready to cook.', '⚡ Quick Meal', 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=90', 'Pan to plate in 15 minutes — aromatic tawa fry'],
   ['mutton', 'Prime Mountain Mutton', 'mutton', 0, 'Tender pasture-grazed mutton — expertly trimmed, succulent cuts.', '👑 Royal Prime', 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=90', 'Daily market rates apply — enquire for tender cuts']
@@ -335,7 +335,7 @@ function App() {
           ...p,
           price: Number(p.price),
           desc: p.description || '',
-          image: p.image_url || seed.find(s => s.id === p.id)?.image || FALLBACK_IMAGES[p.category] || FALLBACK_IMAGES.default,
+          image: seed.find(s => s.id === p.id || s.slug === p.slug || s.name === p.name)?.image || p.image_url || FALLBACK_IMAGES[p.category] || FALLBACK_IMAGES.default,
           chefTip: seed.find(s => s.id === p.id)?.chefTip || 'Prepared fresh upon your order',
           is_available: p.is_available !== false
         })));
@@ -1707,7 +1707,7 @@ function App() {
             </div>
 
             <div className="category-card" onClick={() => { setCategory('prawns'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
-              <img src="https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=900&q=85" alt="Prawns & Shellfish" />
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Big_size_Prawns.JPG?width=1200" alt="Prawns & Shellfish" />
               <div className="category-overlay">
                 <span className="category-tag">🦐 COASTAL DELICACIES</span>
                 <strong>Prawns & Crab</strong>
