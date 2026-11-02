@@ -323,3 +323,38 @@ body{
       linear-gradient(0deg,rgba(10,47,53,.25),rgba(10,47,53,.04));
   }
 }
+
+
+/* Improve hero-copy contrast over bright moving beach footage. */
+.hero::before{
+  background:
+    linear-gradient(90deg,rgba(5,35,41,.82) 0%,rgba(7,43,48,.68) 36%,rgba(8,43,48,.30) 67%,rgba(8,43,48,.08) 100%),
+    linear-gradient(0deg,rgba(5,31,37,.36) 0%,rgba(5,31,37,.08) 58%,rgba(5,31,37,.20) 100%);
+}
+.hero-copy{
+  position:relative;
+  z-index:3;
+  max-width:620px;
+  text-shadow:0 2px 14px rgba(0,20,24,.58);
+}
+.hero .kicker{color:#ffe0b0;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.hero h1{
+  color:#fffef8;
+  text-shadow:0 3px 18px rgba(0,18,22,.72),0 1px 3px rgba(0,0,0,.6);
+}
+.hero h1 em{color:#ffe0a0}
+.hero-copy>p{
+  color:#fffef8;
+  font-weight:500;
+  text-shadow:0 2px 12px rgba(0,18,22,.8);
+}
+.hero .hero-trust{color:#fffef8;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+.hero-copy .hero-actions{position:relative;z-index:3}
+@media(max-width:700px){
+  .hero::before{
+    background:
+      linear-gradient(90deg,rgba(5,35,41,.78),rgba(7,43,48,.56)),
+      linear-gradient(0deg,rgba(5,31,37,.35),rgba(5,31,37,.12));
+  }
+  .hero-copy{max-width:100%}
+}
