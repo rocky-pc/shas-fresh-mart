@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowRight, BadgeCheck, CheckCircle2, ChevronDown, ChevronRight,
-  Fish, Heart, Leaf, MapPin, Menu, Minus, Plus, Search, ShieldCheck,
-  ShoppingBag, ShoppingCart, Sparkles, Truck, X, LogIn, LogOut,
-  ClipboardList, Phone, PackageCheck, Star, Award, Flame, Clock,
-  Scale, Utensils, MessageCircle, HelpCircle, Check, Info, RefreshCw, Zap,
-  Edit3, Trash2, PlusCircle, Eye, EyeOff, Tag, Settings, DollarSign,
-  AlertCircle, Volume2, UploadCloud, ExternalLink, Image, Layers, Sliders
+  ArrowRight, CheckCircle2, ChevronDown,
+  MapPin, Menu, Minus, Plus, Search, ShieldCheck,
+  ShoppingBag, Sparkles, Truck, X, LogIn, LogOut,
+  ClipboardList, Phone, PackageCheck, Star, Clock,
+  Scale, Utensils, MessageCircle, RefreshCw,
+  Trash2, PlusCircle, Eye, EyeOff, Tag,
+  AlertCircle, Image, Sliders
 } from 'lucide-react';
 import { supabase, supabaseConfigured } from './lib/supabase';
 
@@ -30,6 +30,15 @@ const PRESET_IMAGE_SUGGESTIONS = [
   { name: 'Blue Coastal Crab', category: 'prawns', url: 'https://commons.wikimedia.org/wiki/Special:FilePath/Sea_Crab_In_Chennai.jpeg?width=1200' },
   { name: 'Farm Fresh Chicken', category: 'chicken', url: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=90' },
   { name: 'Prime Mountain Mutton', category: 'mutton', url: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=90' }
+];
+
+const BUTCHERY_PRESETS = [
+  'Medium Curry Cut',
+  'Thin Tawa Fry Slices',
+  'Include Fish Head',
+  'Prawns Deveined & Deshelled',
+  'Skinless Biryani Cut',
+  'Boneless Cubes'
 ];
 
 const cats = [
@@ -91,21 +100,21 @@ const RECIPES = [
   {
     id: 'curry',
     title: 'Traditional Meen Kulambu & Spicy Curries',
-    desc: 'Firm ocean fish cuts that absorb rich tamarind, coconut, and fiery coastal spices without disintegrating.',
+    desc: 'Firm ocean fish cuts that absorb rich tamarind, coconut, and fiery coastal spices without disintegrating in simmering gravies.',
     tag: 'Spicy Coastal Gravy',
     items: ['sankara-big', 'vanjiram', 'sura', 'seela-medium']
   },
   {
     id: 'fry',
     title: 'Crispy Golden Tawa & Pepper Fry Specials',
-    desc: 'Delicate skin and firm meat that caramelizes into a crispy outer crust while remaining juicy inside.',
+    desc: 'Delicate skin and firm meat that caramelizes into a crispy outer crust on cast-iron tawa while remaining juicy inside.',
     tag: 'Crispy Crust & Aroma',
     items: ['nethili', 'vanjiram', 'paara-medium', 'prawn-medium']
   },
   {
     id: 'feast',
     title: 'Royal Biryani & Weekend Family Feasts',
-    desc: 'Meaty, succulent prime cuts designed for celebration meals and fragrant slow-cooked biryanis.',
+    desc: 'Meaty, succulent prime cuts designed for celebration meals, Chettinad roasts, and fragrant slow-cooked biryanis.',
     tag: 'Grand Feast Selection',
     items: ['chicken', 'prawn-big', 'crab-medium', 'mutton']
   }
@@ -114,19 +123,19 @@ const RECIPES = [
 const FAQS = [
   {
     q: 'How fresh is the catch at Shas Fresh Mart?',
-    a: 'Every morning at dawn (4:00 AM), our master procurement team hand-selects the top 10% catch directly at coastal fish landing harbors. All cuts are packed on food-grade ice, 100% formalin-free and chemical-free, and dispatched directly to your kitchen within hours.'
+    a: 'Every morning at dawn (4:00 AM), our master procurement team hand-selects the top 10% catch directly at coastal fish landing harbors. All cuts are packed on food-grade crushed ice, 100% formalin-free and ammonia-free, and dispatched directly to your kitchen within hours.'
   },
   {
     q: 'Can I request custom cleaning and cutting preferences?',
-    a: 'Yes, custom butchery and cleaning is 100% free! Simply add your instructions in the order note (e.g. "Medium curry cut", "Separate fish head", "Prawns deveined & deshelled", "Boneless chicken breast"). Our master butchers prepare every cut exactly to your cooking needs.'
+    a: 'Yes, custom butchery and cleaning is 100% complimentary! Simply tap our quick-cut tags or write your instructions at checkout (e.g., "Medium curry cut", "Include fish head", "Prawns deveined & deshelled", "Thin fry slices"). Our master butchers prepare every cut with RO-purified water.'
   },
   {
     q: 'How do I place an order and track it?',
-    a: 'Add your selected items to the shopping bag and click "Proceed to Delivery Details". You can enter your address and place the order directly online into our kitchen dispatch queue, with instant on-screen order confirmation!'
+    a: 'Add your selected items to your royal bag and click "Proceed to Delivery Details". Enter your address to dispatch the order directly into our live kitchen queue with instant on-screen order confirmation and reference ID.'
   },
   {
     q: 'What are your delivery hours and charges?',
-    a: 'We operate 7 days a week from 6:30 AM to 8:30 PM. We offer Free Express Delivery on orders meeting our store threshold, delivered in insulated ice packs!'
+    a: 'We deliver 7 days a week from 6:30 AM to 8:30 PM. Enjoy Free Express Cold-Chain Delivery on orders above ₹500 (or a flat ₹40 fee on smaller baskets), delivered in insulated thermal boxes.'
   }
 ];
 
@@ -146,7 +155,7 @@ const TESTIMONIALS = [
   {
     name: 'Karthik Manikandan',
     location: 'Adyar',
-    text: 'Transparent weights, honest rates, and instant online confirmation. The country chicken was tender and flavorful. Outstanding quality and truly royal service.',
+    text: 'Transparent weights, honest rates, and instant online confirmation. The farm chicken was tender and flavorful. Outstanding quality and truly royal service.',
     item: 'Farm Fresh Chicken'
   }
 ];
@@ -160,12 +169,11 @@ function playOrderChime() {
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
     const now = ctx.currentTime;
-    
-    // First tone
+
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.setValueAtTime(587.33, now);
     gain1.gain.setValueAtTime(0.18, now);
     gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
     osc1.connect(gain1);
@@ -173,11 +181,10 @@ function playOrderChime() {
     osc1.start(now);
     osc1.stop(now + 0.35);
 
-    // Second higher tone
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880, now + 0.12); // A5
+    osc2.frequency.setValueAtTime(880, now + 0.12);
     gain2.gain.setValueAtTime(0.22, now + 0.12);
     gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
     osc2.connect(gain2);
@@ -185,14 +192,20 @@ function playOrderChime() {
     osc2.start(now + 0.12);
     osc2.stop(now + 0.55);
   } catch (err) {
-    // Audio autoplay restrictions or not supported
+    // Ignore autoplay restriction errors
   }
 }
 
 function Logo({ admin = false }) {
   const [fallback, setFallback] = useState(false);
   return (
-    <a className="royal-brand" href="#home" onClick={(e) => { if (admin) { e.preventDefault(); } }}>
+    <a
+      className="royal-brand"
+      href="#home"
+      onClick={(e) => {
+        if (admin) e.preventDefault();
+      }}
+    >
       <div className="brand-crest">
         <img
           src={fallback ? '/shas-logo.svg' : '/shas-brand.png'}
@@ -213,7 +226,14 @@ function App() {
   const [products, setProducts] = useState(seed);
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
-  const [cart, setCart] = useState({});
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shas_royal_cart');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [cartOpen, setCartOpen] = useState(false);
   const [checkout, setCheckout] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -238,7 +258,7 @@ function App() {
   // Admin & Routing state
   const [admin, setAdmin] = useState(window.location.pathname.startsWith('/admin'));
   const [session, setSession] = useState(null);
-  const [tab, setTab] = useState('orders'); // 'orders' | 'products' | 'offers' | 'settings'
+  const [tab, setTab] = useState('orders');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -268,10 +288,26 @@ function App() {
   });
 
   // UI state
-  const [activeFaq, setActiveFaq] = useState(null);
+  const [activeFaq, setActiveFaq] = useState(0);
   const [activeRecipe, setActiveRecipe] = useState('curry');
 
   const PHONE = settings.contact_phone || DEFAULT_PHONE;
+
+  // Persist customer cart in localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('shas_royal_cart', JSON.stringify(cart));
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [cart]);
+
+  // Auto-dismiss toast notifications after 4.5 seconds
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(''), 4500);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   // Listen for browser navigation (back/forward)
   useEffect(() => {
@@ -308,10 +344,9 @@ function App() {
 
     loadOrders();
     const interval = setInterval(() => {
-      loadOrders(true); // background silent check
+      loadOrders(true);
     }, 8000);
 
-    // Supabase realtime channel
     const channel = supabase
       .channel('schema-orders-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
@@ -325,7 +360,6 @@ function App() {
     };
   }, [admin, session]);
 
-  // Load products from Supabase
   async function loadProducts() {
     if (!supabaseConfigured) return;
     try {
@@ -345,7 +379,6 @@ function App() {
     }
   }
 
-  // Load store settings from Supabase
   async function loadSettings() {
     if (!supabaseConfigured) return;
     try {
@@ -371,7 +404,6 @@ function App() {
     }
   }
 
-  // Load orders from Supabase
   async function loadOrders(silent = false) {
     if (!supabaseConfigured) return;
     try {
@@ -386,7 +418,6 @@ function App() {
       }
 
       if (data) {
-        // Detect new order arrival for audio chime
         if (ordersCountRef.current > 0 && data.length > ordersCountRef.current) {
           playOrderChime();
           setNotice(`🔔 New Customer Order received from ${data[0].customer_name}!`);
@@ -399,7 +430,6 @@ function App() {
     }
   }
 
-  // Admin Login
   async function login(e) {
     e.preventDefault();
     setLoginError('');
@@ -440,7 +470,6 @@ function App() {
     loadSettings();
   }
 
-  // Admin Logout
   async function logout() {
     if (supabaseConfigured) {
       await supabase.auth.signOut();
@@ -449,7 +478,6 @@ function App() {
     setOrders([]);
   }
 
-  // Admin Order Status Update
   async function updateOrderStatus(id, newStatus) {
     if (!supabaseConfigured) return;
     const { error } = await supabase.from('orders').update({
@@ -465,7 +493,6 @@ function App() {
     }
   }
 
-  // Admin Product Price Update
   async function updateProductPrice(id, newPrice) {
     const val = parseFloat(newPrice);
     if (isNaN(val) || val < 0) {
@@ -486,11 +513,10 @@ function App() {
       setNotice('Could not update price in DB: ' + error.message);
     } else {
       setProducts(old => old.map(p => (p.id === id ? { ...p, price: val } : p)));
-      setNotice(`Price for product updated to ${money(val)}`);
+      setNotice(`Price updated to ${money(val)}`);
     }
   }
 
-  // Admin Product Image Update
   async function updateProductImage(id, newUrl) {
     if (!newUrl?.trim()) return;
     if (!supabaseConfigured) {
@@ -512,7 +538,6 @@ function App() {
     }
   }
 
-  // Admin Product Stock Availability Toggle
   async function toggleProductAvailability(id, currentStatus) {
     const nextStatus = !currentStatus;
     if (!supabaseConfigured) {
@@ -533,7 +558,6 @@ function App() {
     }
   }
 
-  // Admin Product Delete
   async function deleteProduct(id, name) {
     if (!window.confirm(`Are you sure you want to delete "${name}" from the store catalog?`)) return;
     if (!supabaseConfigured) {
@@ -550,7 +574,6 @@ function App() {
     }
   }
 
-  // Admin Add Product
   async function addProduct(e) {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price) {
@@ -603,7 +626,6 @@ function App() {
     });
   }
 
-  // Admin Save Settings
   async function saveSettings(e) {
     if (e) e.preventDefault();
     setBusy(true);
@@ -626,10 +648,9 @@ function App() {
           updated_at: new Date().toISOString()
         });
         if (error) {
-          console.warn('store_settings upsert error:', error);
-          setNotice('Settings saved locally! (Run the store_settings migration in Supabase SQL editor to sync)');
+          setNotice('Settings saved locally! (Run store_settings migration in Supabase SQL editor to sync)');
         } else {
-          setNotice('Store settings saved successfully to Supabase DB!');
+          setNotice('Store settings saved and published live!');
         }
       } catch (err) {
         setNotice('Settings saved locally!');
@@ -651,12 +672,12 @@ function App() {
     : 0;
   const grandTotal = Math.max(0, subtotal + deliveryCharge - discountAmount);
 
-  // Cart quantity controls
   const add = p => {
     setCart(old => ({
       ...old,
       [p.id]: { ...p, quantity: (old[p.id]?.quantity || 0) + 1 }
     }));
+    setNotice(`Added 1 kg of ${p.name} to your Royal Bag`);
   };
 
   const qty = (id, d) => {
@@ -669,12 +690,22 @@ function App() {
     });
   };
 
+  const appendCutPreset = (presetText) => {
+    setCustomer(prev => {
+      const existing = prev.notes.trim();
+      if (existing.toLowerCase().includes(presetText.toLowerCase())) return prev;
+      return {
+        ...prev,
+        notes: existing ? `${existing}, ${presetText}` : presetText
+      };
+    });
+  };
+
   const handleImageError = (e, cat) => {
     e.currentTarget.onerror = null;
     e.currentTarget.src = FALLBACK_IMAGES[cat] || FALLBACK_IMAGES.default;
   };
 
-  // Customer applies coupon
   const handleApplyPromo = (e) => {
     e.preventDefault();
     const clean = promoInput.trim().toUpperCase();
@@ -694,7 +725,6 @@ function App() {
     setNotice(`🎉 Promo code ${clean} applied! You saved ${money(Math.round((subtotal * settings.offer_discount_percent) / 100))}`);
   };
 
-  // Customer Places Order directly into Supabase DB
   async function placeCustomerOrder(e) {
     e.preventDefault();
     if (items.length === 0) {
@@ -734,7 +764,6 @@ function App() {
       return;
     }
 
-    // Call Supabase RPC place_order to compute prices server-side and insert to DB
     const { data, error } = await supabase.rpc('place_order', {
       p_customer_name: customer.name.trim(),
       p_phone: customer.phone.trim(),
@@ -753,7 +782,6 @@ function App() {
 
     const orderId = data?.order_id || 'ORD-' + Math.floor(100000 + Math.random() * 900000);
 
-    // Save confirmed order to display the luxurious Confirmation Modal
     setConfirmedOrder({
       order_id: orderId,
       customer: { ...customer },
@@ -764,7 +792,6 @@ function App() {
       total: grandTotal
     });
 
-    // Reset customer cart and checkout form
     setCart({});
     setCheckout(false);
     setCartOpen(false);
@@ -772,16 +799,17 @@ function App() {
     setAppliedPromo(null);
   }
 
-  // Filter storefront items
-  const shownProducts = products.filter(p => {
-    if (!p.is_available) return false;
-    const matchesCat = category === 'all' || p.category === category;
-    const query = search.toLowerCase().trim();
-    const matchesSearch = !query || `${p.name} ${p.desc || p.description} ${p.chefTip || ''}`.toLowerCase().includes(query);
-    return matchesCat && matchesSearch;
-  });
+  const availableProducts = useMemo(() => products.filter(p => p.is_available), [products]);
 
-  // Filter admin products
+  const shownProducts = useMemo(() => {
+    return availableProducts.filter(p => {
+      const matchesCat = category === 'all' || p.category === category;
+      const query = search.toLowerCase().trim();
+      const matchesSearch = !query || `${p.name} ${p.desc || p.description} ${p.chefTip || ''}`.toLowerCase().includes(query);
+      return matchesCat && matchesSearch;
+    });
+  }, [availableProducts, category, search]);
+
   const shownAdminProducts = products.filter(p => {
     const matchesCat = adminCategoryFilter === 'all' || p.category === adminCategoryFilter;
     const query = adminProductSearch.toLowerCase().trim();
@@ -789,7 +817,6 @@ function App() {
     return matchesCat && matchesSearch;
   });
 
-  // Filter admin orders
   const shownOrders = orders.filter(o => {
     const matchesFilter = orderFilter === 'all' || o.status === orderFilter;
     const query = orderSearch.toLowerCase().trim();
@@ -804,7 +831,6 @@ function App() {
   // ADMIN WORKSPACE RENDERING
   // ==========================================================================
   if (admin) {
-    // 1. BEFORE LOGIN: Dedicated Admin Login Portal (NO sidebar visible!)
     if (!session) {
       return (
         <div className="admin-login-page">
@@ -874,7 +900,7 @@ function App() {
                 </button>
               </div>
 
-              <button className="primary-btn full login-btn" type="submit" disabled={busy}>
+              <button className="primary-btn full" type="submit" disabled={busy}>
                 {busy ? (
                   <>
                     <RefreshCw className="spin" size={17} /> Signing In...
@@ -910,10 +936,8 @@ function App() {
       );
     }
 
-    // 2. AFTER LOGIN: Full Admin Workspace WITH Side Panel & Management Tabs
     return (
       <div className="admin-layout">
-        {/* Admin Sidebar Navigation */}
         <aside className="admin-sidebar">
           <Logo admin />
           <p className="side-caption">STORE WORKSPACE</p>
@@ -964,7 +988,6 @@ function App() {
           </div>
         </aside>
 
-        {/* Admin Main Body */}
         <main className="admin-main">
           <header className="admin-head">
             <div>
@@ -986,7 +1009,6 @@ function App() {
           {/* TAB 1: ORDERS DASHBOARD */}
           {tab === 'orders' && (
             <>
-              {/* Order Stats */}
               <div className="stats-row">
                 <div>
                   <span>Total Orders</span>
@@ -1012,7 +1034,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Toolbar & Filter */}
               <div className="admin-toolbar">
                 <div className="admin-search-box">
                   <Search size={16} />
@@ -1022,7 +1043,7 @@ function App() {
                     value={orderSearch}
                     onChange={e => setOrderSearch(e.target.value)}
                   />
-                  {orderSearch && <button onClick={() => setOrderSearch('')} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={14} /></button>}
+                  {orderSearch && <button onClick={() => setOrderSearch('')}><X size={14} /></button>}
                 </div>
                 <button className="outline-btn" onClick={() => loadOrders(false)}>
                   <RefreshCw size={15} /> Refresh Orders
@@ -1042,13 +1063,12 @@ function App() {
                 ))}
               </div>
 
-              {/* Orders List */}
               <section className="admin-panel">
-                <div className="panel-title">
-                  <div>
-                    <h2>Orders Feed ({shownOrders.length})</h2>
-                    <p>Live incoming orders from the customer storefront. Automatically synced with Supabase.</p>
-                  </div>
+                <div style={{ marginBottom: 18 }}>
+                  <h2 style={{ margin: '0 0 4px', fontSize: 20 }}>Orders Feed ({shownOrders.length})</h2>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+                    Live incoming orders from the customer storefront. Automatically synced with Supabase.
+                  </p>
                 </div>
 
                 {shownOrders.length === 0 ? (
@@ -1084,7 +1104,6 @@ function App() {
                         </div>
                       </div>
 
-                      {/* Customer Details Box */}
                       <div className="customer-detail-badge">
                         <p>
                           <Phone size={14} /> Mobile: <a href={`tel:+91${o.phone.replace(/\D/g, '')}`}>{o.phone}</a>
@@ -1094,12 +1113,11 @@ function App() {
                         </p>
                         {o.notes && (
                           <div className="notes-pill">
-                            <strong>📝 Custom Butchery & Cleaning:</strong> {o.notes}
+                            <strong>📝 Custom Butchery & Notes:</strong> {o.notes}
                           </div>
                         )}
                       </div>
 
-                      {/* Itemized Order Lines */}
                       <div className="order-lines">
                         {(o.order_items || []).map((it, idx) => (
                           <div key={it.id || idx}>
@@ -1143,7 +1161,7 @@ function App() {
                     value={adminProductSearch}
                     onChange={e => setAdminProductSearch(e.target.value)}
                   />
-                  {adminProductSearch && <button onClick={() => setAdminProductSearch('')} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={14} /></button>}
+                  {adminProductSearch && <button onClick={() => setAdminProductSearch('')}><X size={14} /></button>}
                 </div>
                 <button className="primary-btn" onClick={() => setNewProductModal(true)}>
                   <PlusCircle size={16} /> Add New Product
@@ -1182,7 +1200,6 @@ function App() {
                       <h3>{p.name}</h3>
                       <p>{p.desc || p.description || 'Fresh daily catch'}</p>
 
-                      {/* In-place Price Editor */}
                       <div className="price-edit-row">
                         <span>₹</span>
                         <input
@@ -1219,7 +1236,7 @@ function App() {
                             onClick={() => setEditingImageProduct(p)}
                             title="Change product image"
                           >
-                            <Image size={15} /> Change Image
+                            <Image size={15} /> Photo
                           </button>
                           <button
                             className="icon-btn-danger"
@@ -1242,7 +1259,7 @@ function App() {
             <div className="settings-grid">
               <div className="settings-card">
                 <h3>Storefront Announcement Banner</h3>
-                <p>Customize the royal marquee banner shown at the very top of the customer shop.</p>
+                <p>Customize the royal top ribbon shown at the very top of the customer storefront.</p>
                 <form onSubmit={saveSettings}>
                   <div className="settings-form-row">
                     <label>Banner Announcement Text</label>
@@ -1267,7 +1284,7 @@ function App() {
 
               <div className="settings-card">
                 <h3>Promo Code & Cart Discount</h3>
-                <p>Set a promotional discount code that customers can apply at checkout.</p>
+                <p>Set a promotional discount code that customers can apply inside their shopping bag.</p>
                 <form onSubmit={saveSettings}>
                   <div className="settings-form-row">
                     <label>Offer Status</label>
@@ -1369,7 +1386,7 @@ function App() {
                       onChange={e => setSettingsForm({ ...settingsForm, store_open: e.target.value === 'open' })}
                     >
                       <option value="open">Open (Accepting Online Orders)</option>
-                      <option value="closed">Closed for Maintenance / Night</option>
+                      <option value="closed">Paused / Closed for Maintenance</option>
                     </select>
                   </div>
 
@@ -1464,7 +1481,6 @@ function App() {
                   />
                 </label>
 
-                {/* Preset image suggestions for 1-click photo selection */}
                 <div className="preset-images-box">
                   <span>Quick High-Res Presets:</span>
                   <div className="preset-pills">
@@ -1553,7 +1569,6 @@ function App() {
           </div>
         )}
 
-        {/* Floating Toast Notification */}
         {notice && (
           <div className="toast" role="status">
             <span>{notice}</span>
@@ -1569,7 +1584,7 @@ function App() {
   // ==========================================================================
   return (
     <div id="home">
-      {/* Royal Marquee Announcement Bar */}
+      {/* Royal Top Ribbon Announcement Bar */}
       <div className="announcement">
         <div className="announcement-inner">
           <span className="announcement-badge"><CrownIcon /> DAWN CATCH 4:00 AM</span>
@@ -1578,12 +1593,12 @@ function App() {
           <span>Ice-Packed Express Delivery</span>
           <span className="separator">•</span>
           <a href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
-            <MessageCircle size={14} /> VIP WhatsApp Support: +91 {PHONE}
+            <MessageCircle size={13} /> VIP WhatsApp: +91 {PHONE}
           </a>
         </div>
       </div>
 
-      {/* Royal Sticky Header */}
+      {/* Royal Sticky Glass Header */}
       <header className="site-header">
         <div className="header-inner">
           <Logo />
@@ -1592,24 +1607,31 @@ function App() {
             <a href="#categories" onClick={() => setMenu(false)}>Categories</a>
             <a href="#standard" onClick={() => setMenu(false)}>Royal Standard</a>
             <a href="#culinary" onClick={() => setMenu(false)}>Chef's Guide</a>
-            <a href="#reviews" onClick={() => setMenu(false)}>Customer Praise</a>
+            <a href="#reviews" onClick={() => setMenu(false)}>Patron Praise</a>
             <a href="#faq" onClick={() => setMenu(false)}>FAQ</a>
           </nav>
           <div className="header-actions">
             <a className="header-wa-btn" href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
-              <MessageCircle size={16} /> WhatsApp Order
+              <MessageCircle size={15} /> WhatsApp Order
             </a>
-            <button className="icon-btn" onClick={() => document.getElementById('search')?.focus()} aria-label="Search">
-              <Search size={19} />
+            <button
+              className="icon-btn"
+              onClick={() => {
+                document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+                setTimeout(() => document.getElementById('search')?.focus(), 350);
+              }}
+              aria-label="Search catalog"
+            >
+              <Search size={18} />
             </button>
             <button className="cart-btn" onClick={() => setCartOpen(true)} aria-label="Open Shopping Bag">
-              <ShoppingBag size={18} />
+              <ShoppingBag size={17} />
               <span>Bag</span>
               <b>{count}</b>
               {subtotal > 0 && <span className="cart-amount-preview">{money(subtotal)}</span>}
             </button>
             <button className="menu-btn" onClick={() => setMenu(!menu)} aria-label="Toggle menu">
-              {menu ? <X size={22} /> : <Menu size={22} />}
+              {menu ? <X size={21} /> : <Menu size={21} />}
             </button>
           </div>
         </div>
@@ -1633,12 +1655,14 @@ function App() {
 
           <div className="hero-copy">
             <div className="kicker">
-              <Sparkles size={16} /> <span>100% CHEMICAL-FREE • DAWN HARBOR PROCUREMENT</span>
+              <Sparkles size={15} /> 100% CHEMICAL-FREE • DAWN HARBOR PROCUREMENT
             </div>
-            <h1>The King of Fresh Seafood & Meats</h1>
+            <h1>
+              The King of <span>Fresh Seafood</span> & Artisanal Meats
+            </h1>
             <p>
-              Hand-selected from Chennai’s finest coastal fishing harbors at 4:00 AM.
-              Cold-chain packed on crushed ice with zero preservatives, formalin, or compromise.
+              Hand-selected from coastal fishing harbors at 4:00 AM every morning.
+              Cold-chain packed on crushed food-grade ice with zero preservatives, formalin, or compromise.
             </p>
             <div className="hero-actions">
               <a className="primary-btn" href="#shop">
@@ -1655,11 +1679,11 @@ function App() {
               </div>
               <div>
                 <strong>0%</strong>
-                <span>Chemicals or formalin</span>
+                <span>Formalin or ammonia</span>
               </div>
               <div>
-                <strong>Free</strong>
-                <span>Custom butchery</span>
+                <strong>100% Free</strong>
+                <span>Custom RO butchery</span>
               </div>
             </div>
           </div>
@@ -1674,31 +1698,71 @@ function App() {
                 <CrownIcon />
                 <div>
                   <strong>Imperial Seer Fish (Vanjiram)</strong>
-                  <small>Fresh round cuts arriving daily from harbor</small>
+                  <small>Fresh boneless round cuts arriving daily</small>
                 </div>
               </div>
               <div className="photo-stamp">
-                <Sparkles size={16} />
+                <Sparkles size={15} />
                 <strong>TOP 10%</strong>
-                <small>Ocean Catch</small>
+                <small>Export Grade</small>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Categories Section */}
+        {/* Cold-Chain Telemetry & Trust Strip */}
+        <section className="trust-strip" aria-label="Store quality assurances">
+          <div className="trust-grid">
+            <div className="trust-item">
+              <div className="trust-icon"><Clock size={20} /></div>
+              <div>
+                <h4>4:00 AM Harbor Auction</h4>
+                <p>Procured directly from day-boat catamarans at dawn</p>
+              </div>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon"><ShieldCheck size={20} /></div>
+              <div>
+                <h4>100% Chemical & Formalin Free</h4>
+                <p>Zero ammonia, zero preservatives — pure ocean catch</p>
+              </div>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon"><Utensils size={20} /></div>
+              <div>
+                <h4>RO-Purified Custom Butchery</h4>
+                <p>Complimentary curry cuts, fry slices & deveining</p>
+              </div>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon"><Truck size={20} /></div>
+              <div>
+                <h4>0°C–4°C Chilled Express Box</h4>
+                <p>Free delivery on orders above {money(settings.free_delivery_threshold || 500)}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Curated Categories Bento Grid */}
         <section className="category-section" id="categories">
           <div className="section-heading">
             <div>
               <span className="eyebrow">ROYAL SPECTRUM</span>
               <h2>Curated Meat & Ocean Categories</h2>
             </div>
-            <p>Every cut inspected for firm texture, ocean aroma, and culinary excellence.</p>
+            <p>Every cut inspected for firm texture, natural ocean sheen, and culinary excellence.</p>
           </div>
 
           <div className="category-grid">
-            <div className="category-card" onClick={() => { setCategory('fish'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
-              <img src="https://images.unsplash.com/photo-1510130387422-82bed34b37e9?auto=format&fit=crop&w=900&q=85" alt="Fish" />
+            <div
+              className="category-card"
+              onClick={() => {
+                setCategory('fish');
+                document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <img src="https://images.unsplash.com/photo-1510130387422-82bed34b37e9?auto=format&fit=crop&w=900&q=85" alt="Sea & Coastal Fish" />
               <div className="category-overlay">
                 <span className="category-tag">🐟 OCEAN HARVEST</span>
                 <strong>Sea & Coastal Fish</strong>
@@ -1706,17 +1770,29 @@ function App() {
               </div>
             </div>
 
-            <div className="category-card" onClick={() => { setCategory('prawns'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
+            <div
+              className="category-card"
+              onClick={() => {
+                setCategory('prawns');
+                document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
               <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Big_size_Prawns.JPG?width=1200" alt="Prawns & Shellfish" />
               <div className="category-overlay">
                 <span className="category-tag">🦐 COASTAL DELICACIES</span>
-                <strong>Prawns & Crab</strong>
+                <strong>Prawns, Squid & Crab</strong>
                 <p>Jumbo Tiger Prawns, Sea Squid & Fresh Blue Coastal Crabs.</p>
               </div>
             </div>
 
-            <div className="category-card" onClick={() => { setCategory('chicken'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
-              <img src="https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=85" alt="Chicken" />
+            <div
+              className="category-card"
+              onClick={() => {
+                setCategory('chicken');
+                document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <img src="https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=85" alt="Farm Fresh Chicken" />
               <div className="category-overlay">
                 <span className="category-tag">🍗 ARTISANAL POULTRY</span>
                 <strong>Farm Fresh Chicken</strong>
@@ -1724,7 +1800,13 @@ function App() {
               </div>
             </div>
 
-            <div className="category-card" onClick={() => { setCategory('mutton'); document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' }); }}>
+            <div
+              className="category-card"
+              onClick={() => {
+                setCategory('mutton');
+                document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
               <img src="https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=900&q=85" alt="Prime Mutton" />
               <div className="category-overlay">
                 <span className="category-tag">🥩 MOUNTAIN GRAZED</span>
@@ -1735,7 +1817,7 @@ function App() {
           </div>
         </section>
 
-        {/* Product Catalog Section */}
+        {/* Imperial Market Showcase (Product Catalog) */}
         <section className="shop-section" id="shop">
           <div className="section-heading">
             <div>
@@ -1747,100 +1829,132 @@ function App() {
 
           <div className="shop-command-bar">
             <div className="category-pills">
-              {cats.map(c => (
-                <button
-                  key={c.id}
-                  className={category === c.id ? 'cat-pill active' : 'cat-pill'}
-                  onClick={() => setCategory(c.id)}
-                >
-                  <span className="cat-icon">{c.icon}</span>
-                  <span>{c.label}</span>
-                </button>
-              ))}
+              {cats.map(c => {
+                const catCount = c.id === 'all'
+                  ? availableProducts.length
+                  : availableProducts.filter(p => p.category === c.id).length;
+                return (
+                  <button
+                    key={c.id}
+                    className={category === c.id ? 'cat-pill active' : 'cat-pill'}
+                    onClick={() => setCategory(c.id)}
+                  >
+                    <span>{c.icon}</span>
+                    <span>{c.label} ({catCount})</span>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="search-box">
-              <Search size={18} />
+              <Search size={17} />
               <input
                 id="search"
                 type="text"
-                placeholder="Search fish, prawns, chicken, recipe cuts..."
+                placeholder="Search Vanjiram, Sankara, prawns, curry cut..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
               {search && (
                 <button onClick={() => setSearch('')} aria-label="Clear search">
-                  <X size={16} />
+                  <X size={15} />
                 </button>
               )}
             </div>
           </div>
 
-          <div className="product-grid">
-            {shownProducts.map(p => (
-              <article className="product-card" key={p.id}>
-                <div className="product-image">
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    loading="lazy"
-                    onError={e => handleImageError(e, p.category)}
-                  />
-                  {p.tag && <span className="product-badge">{p.tag}</span>}
-                  <span className="category-chip">{catName(p.category)}</span>
-                </div>
-
-                <div className="product-info">
-                  <h3>{p.name}</h3>
-                  <p>{p.desc}</p>
-                  <div className="chef-tip">
-                    <Utensils size={13} />
-                    <span>{p.chefTip}</span>
-                  </div>
-
-                  <div className="product-bottom">
-                    <div>
-                      {p.price > 0 ? (
-                        <>
-                          <small>Price per {p.unit || 'kg'}</small>
-                          <strong>{money(p.price)}</strong>
-                        </>
-                      ) : (
-                        <>
-                          <small>Daily Market Price</small>
-                          <strong style={{ fontSize: 16 }}>Enquire Rate</strong>
-                        </>
-                      )}
+          {shownProducts.length === 0 ? (
+            <div className="empty-state">
+              <Search size={38} />
+              <h3>No matching cuts found</h3>
+              <p>Try clearing your search filter or switching to "All Royal Cuts".</p>
+              <button className="primary-btn" onClick={() => { setCategory('all'); setSearch(''); }}>
+                Show All Fresh Cuts
+              </button>
+            </div>
+          ) : (
+            <div className="product-grid">
+              {shownProducts.map(p => {
+                const inBagQty = cart[p.id]?.quantity || 0;
+                return (
+                  <article className="product-card" key={p.id}>
+                    <div className="product-image">
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        loading="lazy"
+                        onError={e => handleImageError(e, p.category)}
+                      />
+                      {p.tag && <span className="product-badge">{p.tag}</span>}
+                      {inBagQty > 0 && <span className="in-bag-pill">✓ {inBagQty} kg in Bag</span>}
+                      <span className="category-chip">{catName(p.category)}</span>
                     </div>
 
-                    {p.price > 0 ? (
-                      <button
-                        className="add-btn"
-                        onClick={() => add(p)}
-                        aria-label={`Add ${p.name} to royal bag`}
-                      >
-                        <Plus size={16} />
-                        <span>Add to Bag</span>
-                      </button>
-                    ) : (
-                      <button
-                        className="wa-ask-btn"
-                        onClick={() => {
-                          const text = encodeURIComponent(`Hi Shas Fresh Mart! I would like to inquire today's market price for ${p.name}.`);
-                          window.open(`https://wa.me/91${PHONE}?text=${text}`, '_blank');
-                        }}
-                      >
-                        <MessageCircle size={15} /> Ask Rate
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <div className="product-info">
+                      <h3>{p.name}</h3>
+                      <p>{p.desc}</p>
+                      <div className="chef-tip">
+                        <Utensils size={13} />
+                        <span>{p.chefTip}</span>
+                      </div>
+
+                      <div className="product-bottom">
+                        <div>
+                          {p.price > 0 ? (
+                            <>
+                              <small>Price per {p.unit || 'kg'}</small>
+                              <strong>{money(p.price)}</strong>
+                            </>
+                          ) : (
+                            <>
+                              <small>Daily Market Price</small>
+                              <strong style={{ fontSize: 16 }}>Enquire Rate</strong>
+                            </>
+                          )}
+                        </div>
+
+                        {p.price > 0 ? (
+                          inBagQty > 0 ? (
+                            <div className="card-stepper" aria-label={`Quantity stepper for ${p.name}`}>
+                              <button onClick={() => qty(p.id, -1)} aria-label="Decrease quantity">
+                                <Minus size={14} />
+                              </button>
+                              <span>{inBagQty} kg</span>
+                              <button onClick={() => qty(p.id, 1)} aria-label="Increase quantity">
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="add-btn"
+                              onClick={() => add(p)}
+                              aria-label={`Add ${p.name} to royal bag`}
+                            >
+                              <Plus size={15} />
+                              <span>Add to Bag</span>
+                            </button>
+                          )
+                        ) : (
+                          <button
+                            className="wa-ask-btn"
+                            onClick={() => {
+                              const text = encodeURIComponent(`Hi Shas Fresh Mart! I would like to inquire today's market price for ${p.name}.`);
+                              window.open(`https://wa.me/91${PHONE}?text=${text}`, '_blank');
+                            }}
+                          >
+                            <MessageCircle size={15} /> Ask Rate
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </section>
 
-        {/* The Royal Standard / Promise */}
+        {/* The Royal Standard / Cold-Chain Promise */}
         <section className="promise-section" id="standard">
           <div className="promise-content">
             <span className="eyebrow">OUR ROYAL OATH</span>
@@ -1863,7 +1977,7 @@ function App() {
                 <div className="promise-icon"><ShieldCheck size={22} /></div>
                 <div>
                   <strong>0% Chemical & Formalin Guarantee</strong>
-                  <p>Certified chemical-free. Every batch undergoes strict quality and freshness inspection.</p>
+                  <p>Certified chemical-free. Every batch undergoes strict gill, eye-clarity, and firmness inspection.</p>
                 </div>
               </div>
 
@@ -1871,7 +1985,7 @@ function App() {
                 <div className="promise-icon"><Scale size={22} /></div>
                 <div>
                   <strong>Complimentary Custom Butchery</strong>
-                  <p>Curry cut, biryani pieces, skin-on or boneless fillets cleaned with purified RO water.</p>
+                  <p>Curry cut, tawa fry slices, skin-on or boneless fillets cleaned with purified RO water.</p>
                 </div>
               </div>
             </div>
@@ -1884,21 +1998,21 @@ function App() {
                 alt="Imperial Fresh Mart Promise"
               />
               <div>
-                <strong>Ice-Chilled Transit</strong>
-                <small>Maintained at 0°C–4°C in food-grade thermal containers</small>
+                <strong>Ice-Chilled Thermal Transit</strong>
+                <small>Maintained at 0°C–4°C in food-grade insulated containers</small>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Chef Culinary Pairing Guide */}
+        {/* Chef's Interactive Culinary Pairing Studio */}
         <section className="culinary-section" id="culinary">
           <div className="section-heading">
             <div>
               <span className="eyebrow">CULINARY EXCELLENCE</span>
               <h2>Chef's Preparation Guide</h2>
             </div>
-            <p>Pick the right cut for your recipe to achieve maximum flavor and succulence.</p>
+            <p>Select your dish style to discover the ideal ocean or farm cuts for maximum flavor.</p>
           </div>
 
           <div className="recipe-selector">
@@ -1921,20 +2035,39 @@ function App() {
                   <span className="culinary-badge">{active.tag}</span>
                   <h3>{active.title}</h3>
                   <p>{active.desc}</p>
-                  <small>Recommended Cuts Available in Shop:</small>
-                  <div className="culinary-items">
-                    {active.items.map(itemId => {
-                      const item = products.find(p => p.id === itemId);
-                      if (!item) return null;
-                      return (
-                        <div key={itemId} className="culinary-chip" onClick={() => add(item)}>
-                          <span>{item.name}</span>
-                          <b>{money(item.price)}/kg</b>
-                          <Plus size={14} />
+                  <small>Tap any recommended cut on the right to add directly to your bag →</small>
+                </div>
+
+                <div className="culinary-items">
+                  {active.items.map(itemId => {
+                    const item = products.find(p => p.id === itemId);
+                    if (!item) return null;
+                    return (
+                      <div
+                        key={itemId}
+                        className="culinary-chip"
+                        onClick={() => {
+                          if (item.price > 0) {
+                            add(item);
+                          } else {
+                            const text = encodeURIComponent(`Hi Shas Fresh Mart! I would like to inquire today's market price for ${item.name}.`);
+                            window.open(`https://wa.me/91${PHONE}?text=${text}`, '_blank');
+                          }
+                        }}
+                      >
+                        <div className="culinary-chip-meta">
+                          <img src={item.image} alt={item.name} onError={e => handleImageError(e, item.category)} />
+                          <div>
+                            <span>{item.name}</span>
+                            <b>{item.price > 0 ? `${money(item.price)} / kg` : 'Enquire Rate'}</b>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="culinary-chip-add">
+                          <Plus size={15} />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -1948,7 +2081,7 @@ function App() {
               <span className="eyebrow">PATRON APPRECIATION</span>
               <h2>Praise from Discerning Kitchens</h2>
             </div>
-            <p>Trusted by seafood connoisseurs, families, and chefs across Chennai.</p>
+            <p>Trusted by seafood connoisseurs, home chefs, and families across Chennai.</p>
           </div>
 
           <div className="testimonials-grid">
@@ -1956,7 +2089,7 @@ function App() {
               <article className="testimonial-card" key={idx}>
                 <div className="stars">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={15} fill="#d4af37" color="#d4af37" />
+                    <Star key={i} size={15} fill="#f5d061" color="#f5d061" />
                   ))}
                 </div>
                 <p>"{t.text}"</p>
@@ -1972,14 +2105,14 @@ function App() {
           </div>
         </section>
 
-        {/* FAQ Accordion */}
+        {/* Interactive FAQ Accordion */}
         <section className="faq-section" id="faq">
           <div className="section-heading">
             <div>
               <span className="eyebrow">COMMON INQUIRIES</span>
               <h2>Frequently Asked Questions</h2>
             </div>
-            <p>Everything you need to know about our sourcing, delivery, and butchery.</p>
+            <p>Everything you need to know about our dawn harbor sourcing, cold-chain delivery, and custom butchery.</p>
           </div>
 
           <div className="faq-list">
@@ -1999,14 +2132,14 @@ function App() {
           </div>
         </section>
 
-        {/* Royal Delivery Banner */}
+        {/* Royal Delivery Callout Banner */}
         <section className="delivery-banner">
           <div>
             <span className="eyebrow">DIRECT TO YOUR DOORSTEP</span>
             <h2>Experience Imperial Seafood at Home</h2>
-            <p>Delivered on crushed ice in food-grade thermal containers. Ready to cook or marinate.</p>
+            <p>Delivered on crushed ice in food-grade thermal containers. Ready for your pan or curry pot.</p>
           </div>
-          <button className="primary-btn" onClick={() => { setCartOpen(true); }}>
+          <button className="primary-btn" onClick={() => setCartOpen(true)}>
             Open Shopping Bag ({count}) <ArrowRight size={17} />
           </button>
         </section>
@@ -2049,13 +2182,13 @@ function App() {
             </ul>
           </div>
 
-          <div className="footer-promise">
+          <div>
             <h4>Imperial Assurance</h4>
             <div className="assurance-badge">
               <ShieldCheck size={28} />
               <div>
                 <strong>Zero Preservatives</strong>
-                <p>100% natural, pristine ocean fish packed on fresh ice.</p>
+                <p>100% natural, pristine ocean fish packed on fresh crushed ice every morning.</p>
               </div>
             </div>
           </div>
@@ -2069,7 +2202,7 @@ function App() {
         </div>
       </footer>
 
-      {/* Shopping Bag Drawer */}
+      {/* Slide-Over Shopping Bag Drawer */}
       {cartOpen && (
         <div className="backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setCartOpen(false); }}>
           <aside className="cart-drawer">
@@ -2077,7 +2210,7 @@ function App() {
               <div>
                 <span className="eyebrow">YOUR ROYAL SELECTION</span>
                 <h2>Your Shopping Bag ({count})</h2>
-                <p>Inspected, ice-packed, and prepared upon checkout.</p>
+                <p>Inspected, ice-packed, and custom cut upon checkout.</p>
               </div>
               <button className="icon-btn" onClick={() => setCartOpen(false)} aria-label="Close Bag">
                 <X size={20} />
@@ -2086,7 +2219,6 @@ function App() {
 
             {items.length ? (
               <>
-                {/* Free Delivery Perk Bar */}
                 <div className="delivery-perk-bar">
                   <div className="perk-text">
                     {subtotal >= (settings.free_delivery_threshold || 500) ? (
@@ -2103,7 +2235,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Cart Items List */}
                 <div className="cart-lines">
                   {items.map(i => (
                     <div className="cart-line" key={i.id}>
@@ -2123,14 +2254,13 @@ function App() {
                   ))}
                 </div>
 
-                {/* Promo Code Apply */}
                 {settings.offer_enabled && (
                   <div>
                     {!appliedPromo ? (
                       <form className="coupon-row" onSubmit={handleApplyPromo}>
                         <input
                           type="text"
-                          placeholder={`Enter Promo Code (e.g. ${settings.offer_code || 'FRESH10'})`}
+                          placeholder={`Promo Code (e.g. ${settings.offer_code || 'FRESH10'})`}
                           value={promoInput}
                           onChange={e => setPromoInput(e.target.value)}
                         />
@@ -2138,21 +2268,20 @@ function App() {
                       </form>
                     ) : (
                       <div className="coupon-applied">
-                        <span>🏷️ Promo Code <strong>{appliedPromo}</strong> applied (-{settings.offer_discount_percent}%)</span>
+                        <span>🏷️ Code <strong>{appliedPromo}</strong> applied (-{settings.offer_discount_percent}%)</span>
                         <button type="button" className="coupon-remove" onClick={() => setAppliedPromo(null)}>Remove</button>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Cart Summary */}
                 <div className="cart-summary">
                   <div>
                     <span>Items Subtotal</span>
                     <strong>{money(subtotal)}</strong>
                   </div>
                   <div>
-                    <span>Express Delivery</span>
+                    <span>Express Cold-Chain Delivery</span>
                     <strong>
                       {deliveryCharge === 0 ? <span style={{ color: '#34d399' }}>FREE</span> : money(deliveryCharge)}
                     </strong>
@@ -2171,12 +2300,12 @@ function App() {
                   <button
                     className="primary-btn full"
                     onClick={() => { setCartOpen(false); setCheckout(true); }}
-                    style={{ marginTop: 16 }}
+                    style={{ marginTop: 14 }}
                   >
                     Proceed to Delivery Details <ArrowRight size={17} />
                   </button>
                   <button className="text-btn center" onClick={() => setCartOpen(false)}>
-                    Add More Fresh Catch
+                    + Add More Fresh Catch
                   </button>
                 </div>
               </>
@@ -2200,7 +2329,7 @@ function App() {
         </div>
       )}
 
-      {/* Customer Delivery Checkout Modal */}
+      {/* Customer Delivery & Custom Butchery Checkout Modal */}
       {checkout && (
         <div className="backdrop modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setCheckout(false); }}>
           <section className="checkout-modal">
@@ -2208,7 +2337,7 @@ function App() {
               <div>
                 <span className="eyebrow">DIRECT ORDER DISPATCH</span>
                 <h2>Delivery & Custom Butchery Details</h2>
-                <p>Tell our master butchers where to deliver your ice-chilled order.</p>
+                <p>Tell our master butchers how to prepare and where to deliver your order.</p>
               </div>
               <button className="icon-btn" onClick={() => setCheckout(false)} aria-label="Close modal">
                 <X size={20} />
@@ -2244,7 +2373,7 @@ function App() {
                     required
                     value={customer.area}
                     onChange={e => setCustomer({ ...customer, area: e.target.value })}
-                    placeholder="e.g. Near Velachery Bus Terminus"
+                    placeholder="e.g. Near Velachery Bus Stand"
                   />
                 </label>
               </div>
@@ -2253,24 +2382,37 @@ function App() {
                 Full Delivery Address
                 <textarea
                   required
-                  rows={3}
+                  rows={2}
                   value={customer.address}
                   onChange={e => setCustomer({ ...customer, address: e.target.value })}
-                  placeholder="Apartment name, flat/door number, street name..."
+                  placeholder="Door/Flat No, Apartment Name, Street..."
                 />
               </label>
 
-              <label>
-                Custom Cutting & Cleaning Instructions <span className="muted">(Complimentary)</span>
-                <textarea
-                  rows={2}
-                  value={customer.notes}
-                  onChange={e => setCustomer({ ...customer, notes: e.target.value })}
-                  placeholder="e.g. Vanjiram thin fry slices, Sankara curry cuts, Prawns deveined & deshelled..."
-                />
-              </label>
+              <div>
+                <label>
+                  Custom Cutting & Cleaning Instructions <span className="muted">(Complimentary — Tap to add)</span>
+                  <textarea
+                    rows={2}
+                    value={customer.notes}
+                    onChange={e => setCustomer({ ...customer, notes: e.target.value })}
+                    placeholder="e.g. Vanjiram thin fry slices, Sankara curry cuts, Prawns deveined & deshelled..."
+                  />
+                </label>
+                <div className="cut-quick-pills">
+                  {BUTCHERY_PRESETS.map(preset => (
+                    <button
+                      type="button"
+                      key={preset}
+                      className="cut-pill"
+                      onClick={() => appendCutPreset(preset)}
+                    >
+                      + {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-              {/* Bill Details Breakdown */}
               <div className="checkout-total">
                 <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 13, color: 'var(--text-muted)' }}>
@@ -2317,19 +2459,19 @@ function App() {
         </div>
       )}
 
-      {/* MODAL: Customer Order Confirmation (Instant feedback, NO forced WhatsApp redirect) */}
+      {/* MODAL: Customer Order Confirmation */}
       {confirmedOrder && (
         <div className="backdrop modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setConfirmedOrder(null); }}>
           <div className="order-success-card">
             <div className="success-celebrate-crest">
-              <CheckCircle2 size={44} />
+              <CheckCircle2 size={42} />
             </div>
             <div className="order-ref-pill">
               ORDER REFERENCE: #{confirmedOrder.order_id.slice(0, 8).toUpperCase()}
             </div>
             <h2>Order Placed Successfully!</h2>
             <p>
-              Thank you, <strong>{confirmedOrder.customer.name}</strong>! Your order has been placed directly into our
+              Thank you, <strong>{confirmedOrder.customer.name}</strong>! Your order has been dispatched directly into our
               Store Admin workspace queue. Our master butchers are preparing your fresh cuts.
             </p>
 
@@ -2353,9 +2495,8 @@ function App() {
                 href={`https://wa.me/91${PHONE}?text=${encodeURIComponent(`Hi Shas Fresh Mart, I have placed order #${confirmedOrder.order_id.slice(0, 8).toUpperCase()} for ${money(confirmedOrder.total)}. Please confirm dispatch!`)}`}
                 target="_blank"
                 rel="noreferrer"
-                style={{ textAlign: 'center', justifyContent: 'center' }}
               >
-                <MessageCircle size={16} /> Optional: Chat with Store on WhatsApp
+                <MessageCircle size={16} /> Optional: Share Order on WhatsApp
               </a>
             </div>
           </div>
@@ -2365,13 +2506,13 @@ function App() {
       {/* Mobile Sticky Quick Order Dock */}
       <nav className="mobile-royal-dock" aria-label="Mobile quick actions">
         <a className="dock-btn dock-call" href={`tel:+91${PHONE}`}>
-          <Phone size={16} /> Call
+          <Phone size={15} /> Call
         </a>
         <a className="dock-btn dock-wa" href={`https://wa.me/91${PHONE}`} target="_blank" rel="noreferrer">
-          <MessageCircle size={16} /> WhatsApp
+          <MessageCircle size={15} /> WhatsApp
         </a>
         <button className="dock-btn dock-cart" onClick={() => setCartOpen(true)}>
-          <ShoppingBag size={16} />
+          <ShoppingBag size={15} />
           <span>Bag ({count})</span>
         </button>
       </nav>
@@ -2392,7 +2533,7 @@ function App() {
 function CrownIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M2 19h20v2H2zM2 5l5 7 5-7 5 7 5-7v12H2z"/>
+      <path d="M2 19h20v2H2zM2 5l5 7 5-7 5 7 5-7v12H2z" />
     </svg>
   );
 }
