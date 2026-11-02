@@ -3714,3 +3714,148 @@ img {
   cursor: pointer;
   font-size: 11px;
 }
+
+
+/* Shas Fresh Mart — Tamil Nadu coastal market design system.
+   Final shared overrides intentionally style both the customer storefront and admin workspace. */
+:root{
+  --market-ink:#12383d;
+  --market-ocean:#07545b;
+  --market-teal:#087f83;
+  --market-seafoam:#dff0e7;
+  --market-sand:#fbf7ed;
+  --market-card:#fffdf7;
+  --market-line:#d9e5dc;
+  --market-coral:#ed8c68;
+  --market-gold:#ffc15a;
+  --market-muted:#667b79;
+}
+body{background:var(--market-sand);color:var(--market-ink)}
+#home{background:var(--market-sand);color:var(--market-ink)}
+.site-header{background:rgba(255,253,247,.94);border-bottom:1px solid var(--market-line);box-shadow:0 6px 24px #12383d0d}
+.brand-name{color:var(--market-ink);text-shadow:none}
+.brand-subtitle{color:var(--market-teal)}
+.brand-crest{background:#e5f2e8;border-color:#c2dace;box-shadow:none}
+.nav-links a{color:#345b5b}
+.nav-links a:hover{color:var(--market-teal)}
+.announcement{background:var(--market-ocean);color:#fff9ed;border-bottom:0}
+.hero::before{background:linear-gradient(90deg,rgba(3,35,39,.87) 0%,rgba(4,45,48,.68) 48%,rgba(4,45,48,.2) 100%),linear-gradient(0deg,rgba(3,35,39,.32),transparent 60%)}
+.hero h1{color:#fffdf7;text-shadow:0 3px 20px #001d20a8}
+.hero-copy>p{color:#f5f5ec;text-shadow:0 2px 10px #001d20a0}
+.primary-btn,.cart-btn{background:var(--market-gold);color:#12383d;border-color:var(--market-gold);box-shadow:0 8px 22px #7e4b1b20}
+.primary-btn:hover,.cart-btn:hover{background:#ffd58b;color:#12383d}
+.text-btn{color:var(--market-teal)}
+.category-section,.faq-section,.testimonials-section{background:var(--market-sand);color:var(--market-ink)}
+.section-heading h2,.shop-heading h2,.promise-copy h2,.faq-section h2{color:var(--market-ink)}
+.section-heading p,.shop-heading p{color:var(--market-muted)}
+.category-card{border:1px solid #d8e6dc;box-shadow:0 8px 24px #12383d0d}
+.shop-section{background:linear-gradient(180deg,#eaf4ec 0%,#f8f7ee 100%);color:var(--market-ink)}
+.search-box{background:#fffdf7;border-color:var(--market-line);color:var(--market-ink)}
+.search-box input{color:var(--market-ink)}
+.filter-chip{background:#fffdf7;border-color:#d7e5dc;color:#365d5a}
+.filter-chip.active,.filter-chip:hover{background:var(--market-ocean);border-color:var(--market-ocean);color:#fffdf7}
+.product-card{background:var(--market-card);border:1px solid var(--market-line);box-shadow:0 8px 24px #12383d0a}
+.product-card:hover{border-color:#a9cfc0;box-shadow:0 18px 36px #12383d17}
+.product-image{background:#e3eee6}
+.product-info h3{color:var(--market-ink)}
+.product-info>p,.product-info .product-desc{color:#647976}
+.product-cat{color:var(--market-teal)}
+.product-tag{background:#ffdfa3;color:#6a4313}
+.add-btn{background:#e3f2e9;border-color:#c5e2d2;color:#075b50}
+.add-btn:hover,.add-btn.added{background:var(--market-ocean);border-color:var(--market-ocean);color:#fff}
+.quick-add{background:#fffdf7;color:var(--market-ocean)}
+.quick-add:hover{background:var(--market-gold);color:var(--market-ink)}
+.promise-section{background:linear-gradient(120deg,#fff9ed,#e9f3eb);color:var(--market-ink)}
+.promise-item>div strong{color:var(--market-ink)}
+.promise-item>div p{color:var(--market-muted)}
+.delivery-banner{background:linear-gradient(120deg,#073f46,#087a7d);color:#fffdf7}
+.delivery-banner h2{color:#fffdf7}
+.delivery-banner p{color:#e0efea}
+.site-footer{background:#07363c;color:#eaf4ee}
+.site-footer h4{color:#ffd28a}
+.site-footer a{color:#d7e9df}
+.site-footer a:hover{color:#ffc15a}
+.footer-bottom{border-color:#ffffff20;color:#c4d8d1}
+.backdrop{background:rgba(5,25,29,.58);backdrop-filter:blur(5px)}
+.cart-drawer,.checkout-modal,.order-success-card{background:#fffdf7;color:var(--market-ink);border:1px solid var(--market-line);box-shadow:0 24px 70px #062f3433}
+.drawer-head h2,.checkout-modal h2,.order-success-card h2{color:var(--market-ink)}
+.drawer-head p,.checkout-modal p,.checkout-legal{color:var(--market-muted)}
+.cart-line{border-color:var(--market-line)}
+.cart-line-info strong,.cart-summary strong{color:var(--market-ink)}
+.cart-summary{border-color:var(--market-line)}
+.cart-summary>div{color:#426260}
+.checkout-form label{color:#315653}
+.checkout-form input,.checkout-form textarea,.coupon-row input{background:#fff;border:1px solid #cdded5;color:var(--market-ink);border-radius:9px}
+.checkout-form input:focus,.checkout-form textarea:focus,.coupon-row input:focus{outline:3px solid #087f831c;border-color:var(--market-teal)}
+.checkout-total,.success-details-box{background:#edf5ee;border:1px solid var(--market-line);color:var(--market-ink)}
+.success-details-box strong,.order-ref-pill{color:#08766e}
+.success-details-box p{color:#315653}
+.icon-btn{background:#e5f0e8;color:var(--market-ink)}
+.empty-state{color:var(--market-muted)}
+.mobile-royal-dock{background:#fffdf7;border-top:1px solid var(--market-line);box-shadow:0 -8px 25px #12383d12}
+.dock-btn{color:var(--market-ink)}
+.dock-cart{background:var(--market-gold);color:var(--market-ink)}
+/* Admin: match the customer brand, with clear surfaces, readable controls and status colours. */
+.admin-layout{background:#f3f7f1;color:var(--market-ink)}
+.admin-sidebar{background:linear-gradient(180deg,#073b43,#062f35);border-right:1px solid #0c6569}
+.admin-sidebar .brand-name,.admin-sidebar h1,.admin-sidebar h2,.admin-sidebar h3{color:#fffdf7}
+.admin-sidebar a,.admin-sidebar button{color:#d8e9e1}
+.admin-sidebar a:hover,.admin-sidebar button:hover,.admin-sidebar .active{background:#ffffff13;color:#ffd28a}
+.admin-main{background:#f7f8f1;color:var(--market-ink)}
+.admin-head{background:#fffdf7;border-bottom:1px solid var(--market-line);box-shadow:0 5px 20px #12383d08}
+.admin-head h1,.admin-head h2,.admin-panel h2,.admin-panel h3{color:var(--market-ink)}
+.admin-head p,.admin-panel p{color:var(--market-muted)}
+.admin-panel,.admin-stat-card,.stat-card,.order-admin-card,.product-admin-card,.settings-card{
+  background:#fffdf7;border:1px solid var(--market-line);border-radius:14px;
+  box-shadow:0 7px 22px #12383d0a;color:var(--market-ink)
+}
+.admin-toolbar{gap:12px}
+.admin-search-box input,.admin-panel input,.admin-panel textarea,.admin-panel select,.settings-form-row input,.settings-form-row textarea{
+  background:#fff;color:var(--market-ink);border:1px solid #ccddd3;border-radius:8px
+}
+.admin-search-box input:focus,.admin-panel input:focus,.admin-panel textarea:focus,.admin-panel select:focus{
+  outline:3px solid #087f831a;border-color:var(--market-teal)
+}
+.admin-panel label,.settings-form-row label{color:#315653}
+.product-admin-card{overflow:hidden}
+.prod-admin-thumb{background:#e7f0e8}
+.prod-admin-body h3,.prod-admin-body strong{color:var(--market-ink)}
+.prod-admin-body p,.prod-admin-body small{color:var(--market-muted)}
+.price-edit-row{background:#f1f6ef;border-color:var(--market-line)}
+.price-edit-row input{color:var(--market-ink)}
+.price-edit-row span{color:var(--market-teal)}
+.btn-mini-save{background:#ffdfa3;border-color:#efc574;color:#5b3c0a}
+.btn-mini-save:hover{background:var(--market-gold);color:var(--market-ink)}
+.stock-toggle-btn{color:#315653;border-color:#c5ddd0}
+.stock-toggle-btn:hover{background:#e3f2e9;color:var(--market-teal);border-color:#8ebfac}
+.customer-detail-badge{background:#f0f6ef;border-color:var(--market-line)}
+.customer-detail-badge p{color:#315653}
+.customer-detail-badge a{color:var(--market-teal)}
+.notes-pill{background:#fff5df;border-color:#efd49d;color:#77551b}
+.settings-card{background:#fffdf7}
+.settings-card h3{color:var(--market-ink)}
+.settings-card>p{color:var(--market-muted)}
+.offer-preview-box{background:#073b43;border-color:#d6a64c;color:#ffdfa3}
+.modal-luxury{background:#fffdf7;border-color:#c6ded2;color:var(--market-ink)}
+.modal-luxury h2,.modal-luxury h3{color:var(--market-ink)}
+.preset-pill{background:#edf5ee;border-color:#d4e4d9;color:#315653}
+.preset-pill:hover{background:#dcefe4;border-color:#087f83;color:#07545b}
+.admin-login-page{background:radial-gradient(ellipse at top,#e2f1e8,#f8f7ee 65%);color:var(--market-ink)}
+.admin-login-page h1,.admin-login-page h2,.admin-login-page h3{color:var(--market-ink)}
+.admin-login-page p,.admin-login-page label{color:#456662}
+.admin-login-page input{background:#fff;border:1px solid #cdded5;color:var(--market-ink);border-radius:9px}
+.status-pending{background:#fff1d1;color:#815400;border-color:#e9c777}
+.status-confirmed{background:#e2efff;color:#245b9c;border-color:#b7d2f4}
+.status-preparing{background:#fff0e2;color:#a14f16;border-color:#f0c39c}
+.status-out_for_delivery{background:#f1e8ff;color:#6941a5;border-color:#d4c0f5}
+.status-completed{background:#def4e7;color:#176846;border-color:#b3e0c5}
+.status-cancelled{background:#ffebed;color:#a5283b;border-color:#f1bcc4}
+.toast{background:#073b43;color:#fffdf7;border:1px solid #0b7779;box-shadow:0 12px 30px #12383d25}
+@media(max-width:760px){
+  .admin-layout{grid-template-columns:1fr}
+  .admin-sidebar{width:100%;position:relative}
+  .admin-main{min-width:0;padding:16px}
+  .settings-grid{grid-template-columns:minmax(0,1fr)}
+  .admin-toolbar{flex-wrap:wrap}
+  .product-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
