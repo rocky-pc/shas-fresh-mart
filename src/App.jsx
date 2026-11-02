@@ -277,6 +277,8 @@ function App() {
   const [adminCategoryFilter, setAdminCategoryFilter] = useState('all');
   const [newProductModal, setNewProductModal] = useState(false);
   const [editingImageProduct, setEditingImageProduct] = useState(null);
+  const [newProductImageFile, setNewProductImageFile] = useState(null);
+  const [editingProductImageFile, setEditingProductImageFile] = useState(null);
   const [newProduct, setNewProduct] = useState({
     name: '',
     category: 'fish',
@@ -517,24 +519,39 @@ function App() {
     }
   }
 
-  async function updateProductImage(id, newUrl) {
-    if (!newUrl?.trim()) return;
+  async function uploadProductImage(file, productId) {
+    if (!file) return null;
+    if (!file.type || !file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+    if (file.size > 8 * 1024 * 1024) throw new Error('Image must be smaller than 8 MB.');
+    if (!supabaseConfigured) throw new Error('Image uploads require Supabase Storage.');
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = productId + '/' + Date.now() + '.' + ext;
+    const { error } = await supabase.storage.from('product-images').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+    if (error) throw new Error(error.message);
+    return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+  }
+
+  async function updateProductImage(id, newUrl, imageFile) {
+    if (!imageFile && !newUrl?.trim()) return;
+    setBusy(true);
+    let imageUrl = newUrl?.trim() || '';
+    try { if (imageFile) imageUrl = await uploadProductImage(imageFile, id); }
+    catch (err) { setBusy(false); setNotice('Image upload failed: ' + err.message); return; }
     if (!supabaseConfigured) {
-      setProducts(old => old.map(p => (p.id === id ? { ...p, image_url: newUrl, image: newUrl } : p)));
-      setEditingImageProduct(null);
-      return;
+      setBusy(false);
+      setProducts(old => old.map(p => (p.id === id ? { ...p, image_url: imageUrl, image: imageUrl } : p)));
+      setEditingImageProduct(null); setEditingProductImageFile(null); return;
     }
     const { error } = await supabase.from('products').update({
-      image_url: newUrl.trim(),
+      image_url: imageUrl,
       updated_at: new Date().toISOString()
     }).eq('id', id);
 
-    if (error) {
-      setNotice('Could not update image in DB: ' + error.message);
-    } else {
-      setProducts(old => old.map(p => (p.id === id ? { ...p, image_url: newUrl.trim(), image: newUrl.trim() } : p)));
-      setNotice('Product image updated successfully!');
-      setEditingImageProduct(null);
+    setBusy(false);
+    if (error) setNotice('Could not update image in DB: ' + error.message);
+    else {
+      setProducts(old => old.map(p => (p.id === id ? { ...p, image_url: imageUrl, image: imageUrl } : p)));
+      setNotice('Product image updated successfully!'); setEditingImageProduct(null); setEditingProductImageFile(null);
     }
   }
 
@@ -583,6 +600,10 @@ function App() {
     const priceVal = parseFloat(newProduct.price);
     const slug = newProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString().slice(-4);
     const id = slug;
+    setBusy(true);
+    let uploadedImageUrl = newProduct.image_url?.trim() || '';
+    try { if (newProductImageFile) uploadedImageUrl = await uploadProductImage(newProductImageFile, id); }
+    catch (err) { setBusy(false); setNotice('Image upload failed: ' + err.message); return; }
     const entry = {
       id,
       slug,
@@ -591,11 +612,10 @@ function App() {
       price: priceVal,
       unit: newProduct.unit || 'kg',
       description: newProduct.description?.trim() || 'Freshly sourced quality cut.',
-      image_url: newProduct.image_url?.trim() || FALLBACK_IMAGES[newProduct.category] || FALLBACK_IMAGES.default,
+      image_url: uploadedImageUrl || FALLBACK_IMAGES[newProduct.category] || FALLBACK_IMAGES.default,
       is_available: newProduct.is_available !== false
     };
 
-    setBusy(true);
     if (supabaseConfigured) {
       const { error } = await supabase.from('products').insert([entry]);
       setBusy(false);
@@ -624,6 +644,7 @@ function App() {
       image_url: '',
       is_available: true
     });
+    setNewProductImageFile(null);
   }
 
   async function saveSettings(e) {
@@ -1471,15 +1492,12 @@ function App() {
                   />
                 </label>
 
-                <label style={{ marginTop: 12 }}>
-                  Image URL
-                  <input
-                    type="url"
-                    value={newProduct.image_url}
-                    onChange={e => setNewProduct({ ...newProduct, image_url: e.target.value })}
-                    placeholder="https://..."
-                  />
+                <label className="image-upload-field" style={{ marginTop: 12 }}>
+                  Upload product photo
+                  <input type="file" accept="image/*" onChange={e => setNewProductImageFile(e.target.files?.[0] || null)} />
+                  <small>Choose an image from your device. JPG, PNG or WebP; maximum 8 MB.</small>
                 </label>
+                {newProductImageFile && <div className="image-upload-preview"><img src={URL.createObjectURL(newProductImageFile)} alt="Selected product preview" /><span>{newProductImageFile.name}</span><button type="button" className="preset-pill" onClick={() => setNewProductImageFile(null)}>Remove photo</button></div>}
 
                 <div className="preset-images-box">
                   <span>Quick High-Res Presets:</span>
@@ -1524,16 +1542,13 @@ function App() {
               </div>
 
               <div style={{ marginTop: 16 }}>
-                <label>
-                  Paste New Image URL:
-                  <input
-                    type="url"
-                    defaultValue={editingImageProduct.image_url || editingImageProduct.image}
-                    id="update-img-input"
-                    placeholder="https://images.unsplash.com/..."
-                    style={{ width: '100%', marginTop: 6 }}
-                  />
+                <label className="image-upload-field">
+                  Upload a new photo for this product
+                  <input type="file" accept="image/*" onChange={e => setEditingProductImageFile(e.target.files?.[0] || null)} />
+                  <small>This changes only this product's photo. Maximum 8 MB.</small>
                 </label>
+                {editingProductImageFile && <div className="image-upload-preview"><img src={URL.createObjectURL(editingProductImageFile)} alt="New photo preview" /><span>{editingProductImageFile.name}</span></div>}
+                <input type="hidden" id="update-img-input" defaultValue={editingImageProduct.image_url || editingImageProduct.image} />
 
                 <div className="preset-images-box" style={{ marginTop: 14 }}>
                   <span>Or Pick From Seafood & Meat Presets:</span>
@@ -1557,12 +1572,13 @@ function App() {
                 <button
                   className="primary-btn full"
                   style={{ marginTop: 18 }}
+                  disabled={busy}
                   onClick={() => {
                     const val = document.getElementById('update-img-input')?.value;
-                    updateProductImage(editingImageProduct.id, val);
+                    updateProductImage(editingImageProduct.id, val, editingProductImageFile);
                   }}
                 >
-                  Save Image URL
+                  {busy ? 'Uploading & Saving…' : 'Upload & Save Photo'}
                 </button>
               </div>
             </div>
