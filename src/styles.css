@@ -3153,3 +3153,26 @@ img {
 .image-upload-preview { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 10px; margin-top: 10px; border: 1px solid rgba(184,204,226,.16); border-radius: 10px; background: #071426; color: #d6e1ee; font-size: 12px; }
 .image-upload-preview img { width: 88px; height: 70px; object-fit: cover; border-radius: 7px; }
 .image-upload-preview span { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+
+
+/* Hero video visibility tuning — desktop and mobile */
+.hero-wave-video {
+  opacity: .88 !important;
+  filter: saturate(1.12) contrast(1.04) brightness(.94) !important;
+}
+.hero::before {
+  background:
+    linear-gradient(90deg, rgba(2, 6, 13, .52) 0%, rgba(4, 12, 24, .30) 52%, rgba(2, 6, 13, .16) 100%),
+    linear-gradient(0deg, rgba(2, 6, 13, .34) 0%, transparent 42%, rgba(2, 6, 13, .12) 100%) !important;
+}
+@media (max-width: 768px) {
+  .hero-wave-video {
+    opacity: .82 !important;
+    object-position: center center;
+  }
+  .hero::before {
+    background:
+      linear-gradient(90deg, rgba(2, 6, 13, .42), rgba(2, 6, 13, .24)),
+      linear-gradient(0deg, rgba(2, 6, 13, .42), transparent 62%) !important;
+  }
+}
