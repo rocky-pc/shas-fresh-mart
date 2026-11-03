@@ -93,7 +93,8 @@ const DEFAULT_SETTINGS = {
   offer_discount_percent: 10,
   min_order_for_offer: 799,
   store_open: true,
-  contact_phone: DEFAULT_PHONE
+  contact_phone: DEFAULT_PHONE,
+  hero_banner_image: ''
 };
 
 const RECIPES = [
@@ -249,6 +250,7 @@ function App() {
     }
   });
   const [settingsForm, setSettingsForm] = useState(settings);
+  const [heroBannerFile, setHeroBannerFile] = useState(null);
 
   // Customer Checkout Details
   const [customer, setCustomer] = useState({ name: '', phone: '', address: '', area: '', notes: '' });
@@ -395,7 +397,8 @@ function App() {
           offer_discount_percent: Number(data.offer_discount_percent ?? 10),
           min_order_for_offer: Number(data.min_order_for_offer ?? 799),
           store_open: data.store_open !== false,
-          contact_phone: data.contact_phone || DEFAULT_PHONE
+          contact_phone: data.contact_phone || DEFAULT_PHONE,
+          hero_banner_image: data.hero_banner_image || ''
         };
         setSettings(merged);
         setSettingsForm(merged);
@@ -645,6 +648,24 @@ function App() {
       is_available: true
     });
     setNewProductImageFile(null);
+  }
+
+  async function saveHeroBanner() {
+    if (!heroBannerFile) { setNotice('Choose a banner image first.'); return; }
+    setBusy(true);
+    try {
+      const imageUrl = await uploadProductImage(heroBannerFile, 'hero-banner');
+      const updated = { ...settingsForm, hero_banner_image: imageUrl };
+      setSettingsForm(updated); setSettings(updated);
+      localStorage.setItem('shas_store_settings', JSON.stringify(updated));
+      if (supabaseConfigured) {
+        const { error } = await supabase.from('store_settings').upsert({ id: 'main', ...updated, updated_at: new Date().toISOString() });
+        if (error) throw error;
+      }
+      setHeroBannerFile(null); setNotice('Main banner image uploaded and published!');
+    } catch (err) {
+      setNotice('Banner upload failed: ' + (err.message || 'Check product-images Storage permissions and store_settings schema.'));
+    } finally { setBusy(false); }
   }
 
   async function saveSettings(e) {
@@ -1304,6 +1325,18 @@ function App() {
               </div>
 
               <div className="settings-card">
+                <h3>Main Customer Hero Banner</h3>
+                <p>Upload the homepage hero image directly from your device. This reuses the existing product-images bucket.</p>
+                {(heroBannerFile || settingsForm.hero_banner_image) && <div className="image-upload-preview hero-banner-admin-preview"><img src={heroBannerFile ? URL.createObjectURL(heroBannerFile) : settingsForm.hero_banner_image} alt="Main hero banner preview" /><span>{heroBannerFile ? heroBannerFile.name : 'Current live hero banner'}</span></div>}
+                <label className="image-upload-field" style={{ marginTop: 12 }}>
+                  Choose main banner image
+                  <input type="file" accept="image/*" onChange={e => setHeroBannerFile(e.target.files?.[0] || null)} />
+                  <small>JPG, PNG or WebP. Maximum 8 MB.</small>
+                </label>
+                <button className="primary-btn" type="button" disabled={busy || !heroBannerFile} onClick={saveHeroBanner} style={{ marginTop: 16 }}>{busy ? 'Uploading…' : 'Upload & Publish Hero Banner'}</button>
+              </div>
+
+              <div className="settings-card">
                 <h3>Promo Code & Cart Discount</h3>
                 <p>Set a promotional discount code that customers can apply inside their shopping bag.</p>
                 <form onSubmit={saveSettings}>
@@ -1656,7 +1689,9 @@ function App() {
       <main>
         {/* Cinematic Royal Hero */}
         <section className="hero">
-          <video
+          {settings.hero_banner_image ? (
+            <img className="hero-banner-image" src={settings.hero_banner_image} alt="Fresh seafood market banner" />
+          ) : <video
             className="hero-wave-video"
             autoPlay
             muted
@@ -1667,7 +1702,7 @@ function App() {
             aria-hidden="true"
           >
             <source src="https://videos.pexels.com/video-files/6981339/6981339-hd_1920_1080_25fps.mp4" type="video/mp4" />
-          </video>
+          </video>}
 
           <div className="hero-copy">
             <div className="kicker">
