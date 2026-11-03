@@ -1704,12 +1704,6 @@ function App() {
       <main>
         {/* Cinematic Royal Hero */}
         <section className="hero">
-          <img
-            className="hero-banner-image"
-            src={heroBannerStorageUrl ? heroBannerStorageUrl + '?v=' + heroBannerVersion : defaultHeroImage}
-            alt="Finest ocean catch"
-            onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = defaultHeroImage; }}
-          />
           <video
             className="hero-wave-video"
             autoPlay
@@ -1761,8 +1755,9 @@ function App() {
           <div className="hero-visual">
             <div className="hero-photo">
               <img
-                src="https://images.unsplash.com/photo-1574745529486-2abeed35edbd?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=85&w=1800"
+                src={heroBannerStorageUrl ? heroBannerStorageUrl + '?v=' + heroBannerVersion : defaultHeroImage}
                 alt="Finest ocean catch"
+                onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = defaultHeroImage; }}
               />
               <div className="floating-note">
                 <CrownIcon />
