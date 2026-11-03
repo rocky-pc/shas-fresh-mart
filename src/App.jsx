@@ -245,12 +245,18 @@ function App() {
       const saved = localStorage.getItem('shas_store_settings');
       if (!saved) return DEFAULT_SETTINGS;
       const parsed = JSON.parse(saved);
-      return { ...DEFAULT_SETTINGS, ...parsed, hero_banner_image: parsed.hero_banner_image || DEFAULT_SETTINGS.hero_banner_image };
+      return { ...DEFAULT_SETTINGS, ...parsed };
     } catch {
       return DEFAULT_SETTINGS;
     }
   });
   const [settingsForm, setSettingsForm] = useState(settings);
+  const [heroBannerFile, setHeroBannerFile] = useState(null);
+  const [heroBannerVersion, setHeroBannerVersion] = useState(Date.now());
+  const defaultHeroImage = 'https://images.unsplash.com/photo-1574745529486-2abeed35edbd?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=85&w=1800';
+  const heroBannerStorageUrl = supabaseConfigured
+    ? supabase.storage.from('product-images').getPublicUrl('hero-banner/main.jpg').data.publicUrl
+    : '';
 
   // Customer Checkout Details
   const [customer, setCustomer] = useState({ name: '', phone: '', address: '', area: '', notes: '' });
@@ -531,6 +537,29 @@ function App() {
     const { error } = await supabase.storage.from('product-images').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
     if (error) throw new Error(error.message);
     return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+  }
+
+  async function saveHeroBanner() {
+    if (!heroBannerFile) { setNotice('Choose a banner image first.'); return; }
+    if (!supabaseConfigured) { setNotice('Banner uploads require Supabase Storage.'); return; }
+    if (!session) { setNotice('Please sign in as admin before uploading the banner.'); return; }
+    setBusy(true);
+    try {
+      if (!heroBannerFile.type?.startsWith('image/')) throw new Error('Please choose an image file.');
+      if (heroBannerFile.size > 8 * 1024 * 1024) throw new Error('Image must be smaller than 8 MB.');
+      const { error } = await supabase.storage.from('product-images').upload('hero-banner/main.jpg', heroBannerFile, {
+        cacheControl: '0', upsert: true, contentType: heroBannerFile.type
+      });
+      if (error) throw new Error(error.message);
+      const version = Date.now();
+      setHeroBannerVersion(version);
+      setHeroBannerFile(null);
+      setNotice('Main customer banner image uploaded successfully!');
+    } catch (err) {
+      setNotice('Banner upload failed: ' + (err.message || 'Check product-images bucket permissions.'));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function updateProductImage(id, newUrl, imageFile) {
@@ -1306,6 +1335,23 @@ function App() {
               </div>
 
               <div className="settings-card">
+                <h3>Main Customer Banner Image</h3>
+                <p>Upload the homepage hero photo. It uses the existing <strong>product-images</strong> Storage bucket; no separate bucket is needed.</p>
+                <div className="image-upload-preview hero-banner-admin-preview">
+                  <img src={heroBannerFile ? URL.createObjectURL(heroBannerFile) : (heroBannerStorageUrl ? heroBannerStorageUrl + '?v=' + heroBannerVersion : defaultHeroImage)} alt="Customer hero banner preview" onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = defaultHeroImage; }} />
+                  <span>{heroBannerFile ? heroBannerFile.name : 'Current main banner'}</span>
+                </div>
+                <label className="image-upload-field" style={{ marginTop: 12 }}>
+                  Upload main banner photo
+                  <input type="file" accept="image/*" onChange={e => setHeroBannerFile(e.target.files?.[0] || null)} />
+                  <small>JPG, PNG or WebP. Maximum 8 MB.</small>
+                </label>
+                <button className="primary-btn" type="button" disabled={busy || !heroBannerFile} onClick={saveHeroBanner} style={{ marginTop: 16 }}>
+                  {busy ? 'Uploading…' : 'Upload & Publish Main Banner'}
+                </button>
+              </div>
+
+              <div className="settings-card">
                 <h3>Promo Code & Cart Discount</h3>
                 <p>Set a promotional discount code that customers can apply inside their shopping bag.</p>
                 <form onSubmit={saveSettings}>
@@ -1658,6 +1704,12 @@ function App() {
       <main>
         {/* Cinematic Royal Hero */}
         <section className="hero">
+          <img
+            className="hero-banner-image"
+            src={heroBannerStorageUrl ? heroBannerStorageUrl + '?v=' + heroBannerVersion : defaultHeroImage}
+            alt="Finest ocean catch"
+            onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = defaultHeroImage; }}
+          />
           <video
             className="hero-wave-video"
             autoPlay
