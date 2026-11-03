@@ -1658,11 +1658,18 @@ function App() {
       <main>
         {/* Cinematic Royal Hero */}
         <section className="hero">
-          <img
-            className="hero-banner-image"
-            src="https://images.unsplash.com/photo-1574745529486-2abeed35edbd?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=85&w=1800"
-            alt="Finest ocean catch"
-          />
+          <video
+            className="hero-wave-video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster="https://images.pexels.com/videos/6981339/sea-waves-rippling-towards-the-shore-6981339.jpeg?auto=compress&cs=tinysrgb&w=1600"
+            aria-hidden="true"
+          >
+            <source src="https://videos.pexels.com/video-files/6981339/6981339-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          </video>
 
           <div className="hero-copy">
             <div className="kicker">
