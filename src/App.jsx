@@ -93,8 +93,7 @@ const DEFAULT_SETTINGS = {
   offer_discount_percent: 10,
   min_order_for_offer: 799,
   store_open: true,
-  contact_phone: DEFAULT_PHONE,
-  hero_banner_image: supabaseConfigured ? supabase.storage.from('product-images').getPublicUrl('hero-banner/main').data.publicUrl : ''
+  contact_phone: DEFAULT_PHONE
 };
 
 const RECIPES = [
@@ -252,7 +251,6 @@ function App() {
     }
   });
   const [settingsForm, setSettingsForm] = useState(settings);
-  const [heroBannerFile, setHeroBannerFile] = useState(null);
 
   // Customer Checkout Details
   const [customer, setCustomer] = useState({ name: '', phone: '', address: '', area: '', notes: '' });
@@ -399,8 +397,7 @@ function App() {
           offer_discount_percent: Number(data.offer_discount_percent ?? 10),
           min_order_for_offer: Number(data.min_order_for_offer ?? 799),
           store_open: data.store_open !== false,
-          contact_phone: data.contact_phone || DEFAULT_PHONE,
-          hero_banner_image: data.hero_banner_image || DEFAULT_SETTINGS.hero_banner_image
+          contact_phone: data.contact_phone || DEFAULT_PHONE
         };
         setSettings(merged);
         setSettingsForm(merged);
@@ -650,25 +647,6 @@ function App() {
       is_available: true
     });
     setNewProductImageFile(null);
-  }
-
-  async function saveHeroBanner() {
-    if (!heroBannerFile) { setNotice('Choose a banner image first.'); return; }
-    setBusy(true);
-    try {
-      if (!supabaseConfigured) throw new Error('Supabase Storage is not configured.');
-      if (!heroBannerFile.type?.startsWith('image/')) throw new Error('Please choose an image file.');
-      if (heroBannerFile.size > 8 * 1024 * 1024) throw new Error('Image must be smaller than 8 MB.');
-      const { error: uploadError } = await supabase.storage.from('product-images').upload('hero-banner/main', heroBannerFile, { cacheControl: '3600', upsert: true, contentType: heroBannerFile.type });
-      if (uploadError) throw uploadError;
-      const imageUrl = supabase.storage.from('product-images').getPublicUrl('hero-banner/main').data.publicUrl + '?v=' + Date.now();
-      const updated = { ...settingsForm, hero_banner_image: imageUrl };
-      setSettingsForm(updated); setSettings(updated);
-      localStorage.setItem('shas_store_settings', JSON.stringify(updated));
-      setHeroBannerFile(null); setNotice('Main banner image uploaded and published!');
-    } catch (err) {
-      setNotice('Banner upload failed: ' + (err.message || 'Check product-images Storage permissions and store_settings schema.'));
-    } finally { setBusy(false); }
   }
 
   async function saveSettings(e) {
@@ -1325,18 +1303,6 @@ function App() {
                     Save Banner Announcement
                   </button>
                 </form>
-              </div>
-
-              <div className="settings-card">
-                <h3>Main Customer Hero Banner</h3>
-                <p>Upload the homepage hero image directly from your device. This reuses the existing product-images bucket.</p>
-                {(heroBannerFile || settingsForm.hero_banner_image) && <div className="image-upload-preview hero-banner-admin-preview"><img src={heroBannerFile ? URL.createObjectURL(heroBannerFile) : settingsForm.hero_banner_image} alt="Main hero banner preview" /><span>{heroBannerFile ? heroBannerFile.name : 'Current live hero banner'}</span></div>}
-                <label className="image-upload-field" style={{ marginTop: 12 }}>
-                  Choose main banner image
-                  <input type="file" accept="image/*" onChange={e => setHeroBannerFile(e.target.files?.[0] || null)} />
-                  <small>JPG, PNG or WebP. Maximum 8 MB.</small>
-                </label>
-                <button className="primary-btn" type="button" disabled={busy || !heroBannerFile} onClick={saveHeroBanner} style={{ marginTop: 16 }}>{busy ? 'Uploading…' : 'Upload & Publish Hero Banner'}</button>
               </div>
 
               <div className="settings-card">
