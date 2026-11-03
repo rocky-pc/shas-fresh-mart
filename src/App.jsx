@@ -94,7 +94,7 @@ const DEFAULT_SETTINGS = {
   min_order_for_offer: 799,
   store_open: true,
   contact_phone: DEFAULT_PHONE,
-  hero_banner_image: ''
+  hero_banner_image: supabaseConfigured ? supabase.storage.from('product-images').getPublicUrl('hero-banner/main').data.publicUrl : ''
 };
 
 const RECIPES = [
@@ -654,14 +654,15 @@ function App() {
     if (!heroBannerFile) { setNotice('Choose a banner image first.'); return; }
     setBusy(true);
     try {
-      const imageUrl = await uploadProductImage(heroBannerFile, 'hero-banner');
+      if (!supabaseConfigured) throw new Error('Supabase Storage is not configured.');
+      if (!heroBannerFile.type?.startsWith('image/')) throw new Error('Please choose an image file.');
+      if (heroBannerFile.size > 8 * 1024 * 1024) throw new Error('Image must be smaller than 8 MB.');
+      const { error: uploadError } = await supabase.storage.from('product-images').upload('hero-banner/main', heroBannerFile, { cacheControl: '3600', upsert: true, contentType: heroBannerFile.type });
+      if (uploadError) throw uploadError;
+      const imageUrl = supabase.storage.from('product-images').getPublicUrl('hero-banner/main').data.publicUrl + '?v=' + Date.now();
       const updated = { ...settingsForm, hero_banner_image: imageUrl };
       setSettingsForm(updated); setSettings(updated);
       localStorage.setItem('shas_store_settings', JSON.stringify(updated));
-      if (supabaseConfigured) {
-        const { error } = await supabase.from('store_settings').upsert({ id: 'main', ...updated, updated_at: new Date().toISOString() });
-        if (error) throw error;
-      }
       setHeroBannerFile(null); setNotice('Main banner image uploaded and published!');
     } catch (err) {
       setNotice('Banner upload failed: ' + (err.message || 'Check product-images Storage permissions and store_settings schema.'));
@@ -1690,7 +1691,7 @@ function App() {
         {/* Cinematic Royal Hero */}
         <section className="hero">
           {settings.hero_banner_image ? (
-            <img className="hero-banner-image" src={settings.hero_banner_image} alt="Fresh seafood market banner" />
+            <img className="hero-banner-image" src={settings.hero_banner_image} alt="Fresh seafood market banner" onError={() => setSettings(current => current.hero_banner_image ? { ...current, hero_banner_image: '' } : current)} />
           ) : <video
             className="hero-wave-video"
             autoPlay
