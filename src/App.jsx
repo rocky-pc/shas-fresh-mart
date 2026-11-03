@@ -244,7 +244,9 @@ function App() {
   const [settings, setSettings] = useState(() => {
     try {
       const saved = localStorage.getItem('shas_store_settings');
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+      if (!saved) return DEFAULT_SETTINGS;
+      const parsed = JSON.parse(saved);
+      return { ...DEFAULT_SETTINGS, ...parsed, hero_banner_image: parsed.hero_banner_image || DEFAULT_SETTINGS.hero_banner_image };
     } catch {
       return DEFAULT_SETTINGS;
     }
@@ -398,7 +400,7 @@ function App() {
           min_order_for_offer: Number(data.min_order_for_offer ?? 799),
           store_open: data.store_open !== false,
           contact_phone: data.contact_phone || DEFAULT_PHONE,
-          hero_banner_image: data.hero_banner_image || ''
+          hero_banner_image: data.hero_banner_image || DEFAULT_SETTINGS.hero_banner_image
         };
         setSettings(merged);
         setSettingsForm(merged);
